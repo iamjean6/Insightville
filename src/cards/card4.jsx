@@ -3,7 +3,7 @@ import { Link } from "react-router-dom";
 
 const BlogCard = ({ article }) => {
     return (
-        <Link to={`/article/${article.id}`} className="relative bg-card border border-border rounded-3xl w-full h-full flex flex-col overflow-hidden group transition-all duration-300">
+        <Link to={`/article/${article._id || article.id}`} className="relative bg-card border border-border rounded-3xl w-full h-full flex flex-col overflow-hidden group transition-all duration-300">
 
             {/* Top Image Section */}
             <div className="relative w-full h-56 shrink-0 rounded-t-3xl overflow-hidden">
@@ -44,11 +44,11 @@ const BlogCard = ({ article }) => {
                 <div className="mt-auto flex items-center justify-center gap-6 text-sm font-medium text-muted-foreground w-full pt-4 border-t border-border">
                     <div className="flex items-center gap-1.5 hover:text-primary transition-colors">
                         <Calendar size={15} />
-                        <span>{article.date}</span>
+                        <span>{new Date(article.date).toLocaleDateString()}</span>
                     </div>
                     <div className="flex items-center gap-1.5 hover:text-rose-500 transition-colors">
                         <Heart size={15} />
-                        <span>{article.likes || Math.floor(Math.random() * 500)}</span>
+                        <span>{article.likes || 0}</span>
                     </div>
                 </div>
 

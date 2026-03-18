@@ -1,10 +1,18 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import { useParams, Link } from "react-router-dom";
-import { mockArticles } from "../../constants/indes";
-import { Stethoscope, MailCheckIcon, Tag, ThumbsUpIcon, Share2, Clipboard } from "lucide-react";
-import Card5 from "../cards/card5";
+import { mockArticles } from "../../constants/index";
+import {
+    getOneBlog,
+    likeBlog,
+    getBlogComments,
+    postComment,
+    streamTTS,
+    getPopularBlogs,
+    getRelatedBlogs
+} from "../../services/api";
+
+import { Play, Pause, MailCheckIcon, Tag, ThumbsUpIcon, Share2, Clipboard, MessageCircle, Send, Volume2 } from "lucide-react";
 import Overlay from "../cards/overlay";
-import Standard from "../cards/standard";
 import Button from "./button";
 
 
@@ -15,21 +23,162 @@ export default function Article() {
     const [viewCount, setViewCount] = useState(0);
     const [article, setArticle] = useState(null);
     const [loading, setLoading] = useState(true);
+    const [comments, setComments] = useState([]);
+    const [newComment, setNewComment] = useState("");
+    const [isSubmittingComment, setIsSubmittingComment] = useState(false);
+
+    const [isSpeaking, setIsSpeaking] = useState(false);
+    const [isLoadingAudio, setIsLoadingAudio] = useState(false);
+    const audioRef = useRef(null);
+    const [relatedStories, setRelatedStories] = useState([]);
+    const [popularStories, setPopularStories] = useState([]);
+
+    // Clean up audio on unmount
+    useEffect(() => {
+        return () => {
+            if (audioRef.current) {
+                audioRef.current.pause();
+                audioRef.current = null;
+            }
+        };
+    }, []);
 
     useEffect(() => {
-        // Find the article by ID
-        const foundArticle = mockArticles.find((a) => a.id === parseInt(id));
-        setArticle(foundArticle);
-        setLoading(false);
-        // Simulate view count increment
-        setViewCount(Math.floor(Math.random() * 1000) + 5000);
-        // Scroll to top when article changes
+        const fetchArticleData = async () => {
+            try {
+                // Fetch Article (Backend now increments views on getOneBlog)
+                const response = await getOneBlog(id);
+                if (response && response.data) {
+                    setArticle(response.data);
+                    setLikes(response.data.likes || 0);
+                    setViewCount(response.data.views || 0);
+                } else {
+                    const fallback = mockArticles.find((a) => String(a._id || a.id) === String(id));
+                    setArticle(fallback);
+                    setLikes(Math.floor(Math.random() * 500) + 100);
+                    setViewCount(5000);
+                }
+                // Fetch Related Blogs
+                const relatedRes = await getRelatedBlogs(id);
+                console.log("Related Blogs Response:", relatedRes);
+                if (relatedRes && relatedRes.success) {
+                    setRelatedStories(relatedRes.data);
+                }
+
+                // Fetch Popular Blogs
+                const popularRes = await getPopularBlogs();
+                console.log("Popular Blogs Response:", popularRes);
+                if (popularRes && popularRes.success) {
+                    setPopularStories(popularRes.data);
+                }
+
+                // Fetch Comments
+                const commentsResponse = await getBlogComments(id);
+                if (commentsResponse && commentsResponse.success) {
+                    setComments(commentsResponse.data);
+                }
+            } catch (err) {
+                console.warn("API unavailable, using mock data:", err);
+                const fallback = mockArticles.find((a) => String(a._id || a.id) === String(id));
+                setArticle(fallback);
+                setLikes(Math.floor(Math.random() * 500) + 100);
+                setViewCount(5000);
+            } finally {
+                setLoading(false);
+            }
+        };
+
+        fetchArticleData();
         window.scrollTo(0, 0);
     }, [id]);
 
-    const handleLike = () => {
-        setIsLiked(!isLiked);
-        setLikes(prev => isLiked ? prev - 1 : prev + 1);
+    const handleLike = async () => {
+        if (isLiked) return; // Simple prevent multiple likes for now
+
+        try {
+            const res = await likeBlog(id);
+            if (res.success) {
+                setIsLiked(true);
+                setLikes(res.data.likes);
+            }
+        } catch (err) {
+            console.error("Failed to like:", err);
+            // Fallback for mock/offline
+            setIsLiked(!isLiked);
+            setLikes(prev => isLiked ? prev - 1 : prev + 1);
+        }
+    };
+
+    const handleCommentSubmit = async (e) => {
+        e.preventDefault();
+        if (!newComment.trim()) return;
+
+        setIsSubmittingComment(true);
+        try {
+            const res = await postComment(id, { comment: newComment });
+            if (res.success) {
+                setComments(prev => [...prev, res.data]);
+                setNewComment("");
+            }
+        } catch (err) {
+            console.error("Failed to post comment:", err);
+        } finally {
+            setIsSubmittingComment(false);
+        }
+    };
+
+    const handlePlayAudio = async () => {
+        if (isSpeaking) {
+            audioRef.current.pause();
+            setIsSpeaking(false);
+            return;
+        }
+
+        if (audioRef.current) {
+            audioRef.current.play();
+            setIsSpeaking(true);
+            return;
+        }
+
+        setIsLoadingAudio(true);
+        try {
+            const fullText = `${article.title}. ${article.excerpt}. ${article.content}`;
+            console.log("Fetching TTS for text length:", fullText.length);
+            const blob = await streamTTS(fullText);
+            console.log("Received blob:", blob.type, blob.size);
+
+            if (blob.size < 100) {
+                const text = await blob.text();
+                console.error("Blob too small, might be an error message:", text);
+                throw new Error("Invalid audio received from server");
+            }
+
+            const url = URL.createObjectURL(blob);
+            console.log("Created Audio URL:", url);
+
+            const audio = new Audio(url);
+            audioRef.current = audio;
+
+            audio.onended = () => {
+                setIsSpeaking(false);
+                URL.revokeObjectURL(url);
+                audioRef.current = null;
+            };
+
+            audio.onerror = () => {
+                console.error("Audio playback error");
+                setIsSpeaking(false);
+                setIsLoadingAudio(false);
+                audioRef.current = null;
+            };
+
+            await audio.play();
+            setIsSpeaking(true);
+        } catch (err) {
+            console.error("Failed to play audio:", err);
+        } finally {
+            setIsLoadingAudio(false);
+        }
     };
 
     if (loading) {
@@ -49,8 +198,7 @@ export default function Article() {
         );
     }
 
-    const popularStories = mockArticles.filter(a => a.id !== article.id).slice(0, 4);
-    const relatedStories = mockArticles.filter(a => a.id !== article.id).slice(0, 4);
+    const currentId = article._id || article.id;
 
     return (
         <div className="w-full bg-background py-8 lg:py-12 text-foreground transition-colors duration-300">
@@ -86,6 +234,47 @@ export default function Article() {
                                 {article.excerpt}
                             </p>
 
+                            {/* ElevenLabs Audio Player */}
+                            <div className="flex items-center gap-4 py-4 px-6 bg-card border border-border rounded-2xl shadow-sm">
+                                <button
+                                    onClick={handlePlayAudio}
+                                    disabled={isLoadingAudio}
+                                    className="w-12 h-12 flex items-center justify-center bg-primary text-primary-foreground rounded-full hover:scale-105 transition-all shadow-lg disabled:opacity-50"
+                                >
+                                    {isLoadingAudio ? (
+                                        <div className="w-5 h-5 border-2 border-primary-foreground/30 border-t-primary-foreground rounded-full animate-spin"></div>
+                                    ) : isSpeaking ? (
+                                        <Pause size={24} fill="currentColor" />
+                                    ) : (
+                                        <Play size={24} fill="currentColor" className="ml-1" />
+                                    )}
+                                </button>
+                                <div>
+                                    <p className="font-bold text-foreground flex items-center gap-2">
+                                        <Volume2 size={16} className="text-primary" />
+                                        {isSpeaking ? "Speaking..." : "Listen to this article"}
+                                    </p>
+                                    <p className="text-xs text-muted-foreground font-medium">
+                                        Powered by ElevenLabs AI
+                                    </p>
+                                </div>
+                                {isSpeaking && (
+                                    <div className="flex-grow flex items-center gap-1 ml-4 h-4">
+                                        {[1, 2, 3, 4, 5].map(i => (
+                                            <div
+                                                key={i}
+                                                className="w-1 bg-primary rounded-full animate-pulse"
+                                                style={{
+                                                    height: `${Math.random() * 100}%`,
+                                                    animationDelay: `${i * 0.1}s`,
+                                                    animationDuration: '0.5s'
+                                                }}
+                                            ></div>
+                                        ))}
+                                    </div>
+                                )}
+                            </div>
+
                             <div className="border-t border-border py-6">
                                 {/* author */}
                                 <div className="flex items-center justify-between flex-wrap gap-4">
@@ -99,7 +288,8 @@ export default function Article() {
                                             <p className="text-foreground font-bold text-lg font-galantic">
                                                 By <span className="text-primary hover:underline cursor-pointer transition-all">{article.author}</span>
                                             </p>
-                                            <p className="text-muted-foreground text-sm font-medium font-blackwood">{article.date} • 5 min read</p>
+                                            <p className="text-muted-foreground text-sm font-medium font-blackwood">{new Date(article.date).toLocaleDateString()} • 5 min read</p>
+
                                         </div>
                                     </div>
                                     <div className="flex gap-2">
@@ -132,7 +322,7 @@ export default function Article() {
 
                                 <div className="flex items-baseline gap-2">
                                     <p className="text-foreground font-bold text-3xl font-oldlondon">
-                                        {(viewCount / 1000).toFixed(1)}K
+                                        {viewCount >= 1000 ? `${(viewCount / 1000).toFixed(1)}K` : viewCount}
                                     </p>
                                     <p className="text-muted-foreground font-semibold text-xl font-blackwood lowercase">
                                         views
@@ -199,7 +389,7 @@ export default function Article() {
                                 <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
                                     {relatedStories.map((related) => (
                                         <div
-                                            key={related.id}
+                                            key={related._id || related.id}
                                             className="flex-[0_0_85%] sm:flex-[0_0_75%] lg:flex-[0_0_30%] min-w-0"
                                         >
                                             <Overlay article={related} />
@@ -210,19 +400,58 @@ export default function Article() {
 
                             {/* comments */}
                             <div className="pt-12 space-y-6">
-                                <div className="flex items-center justify-between">
-                                    <h2 className="text-2xl font-bold text-foreground font-vend uppercase">Comments (12)</h2>
-                                    <button className="text-primary font-bold text-sm hover:underline">Add Comment</button>
-                                </div>
-
-                                <div className="w-full bg-muted/30 p-8 rounded-2xl border border-dashed border-border text-center space-y-4">
-                                    <div className="w-16 h-16 bg-card rounded-full flex items-center justify-center mx-auto shadow-sm">
-                                        <Share2 className="text-muted-foreground/30" />
+                                <form onSubmit={handleCommentSubmit} className="space-y-4">
+                                    <div className="flex items-center justify-between">
+                                        <h2 className="text-2xl font-bold text-foreground font-vend uppercase">Comments ({comments.length})</h2>
                                     </div>
-                                    <p className="text-muted-foreground font-medium italic">
-                                        Join the conversation. No comments yet on this remarkable story.
-                                    </p>
-                                </div>
+                                    <div className="relative">
+                                        <textarea
+                                            value={newComment}
+                                            onChange={(e) => setNewComment(e.target.value)}
+                                            placeholder="Join the conversation..."
+                                            className="w-full h-32 p-4 bg-muted/20 border border-border rounded-2xl focus:outline-none focus:ring-2 focus:ring-primary/20 resize-none font-sans text-foreground"
+                                        />
+                                        <button
+                                            type="submit"
+                                            disabled={isSubmittingComment || !newComment.trim()}
+                                            className="absolute bottom-4 right-4 bg-primary text-primary-foreground p-3 rounded-xl hover:opacity-90 transition-all disabled:opacity-50 disabled:cursor-not-allowed shadow-lg"
+                                        >
+                                            {isSubmittingComment ? (
+                                                <div className="w-5 h-5 border-2 border-white/30 border-t-white rounded-full animate-spin"></div>
+                                            ) : (
+                                                <Send size={20} />
+                                            )}
+                                        </button>
+                                    </div>
+                                </form>
+
+                                {comments.length > 0 ? (
+                                    <div className="space-y-6">
+                                        {comments.map((comment, idx) => (
+                                            <div key={comment._id || idx} className="bg-card border border-border p-6 rounded-2xl shadow-sm space-y-3">
+                                                <div className="flex items-center gap-3">
+                                                    <div className="w-10 h-10 bg-primary/10 rounded-full flex items-center justify-center text-primary font-bold">
+                                                        {comment.authorName ? comment.authorName[0] : "U"}
+                                                    </div>
+                                                    <div>
+                                                        <p className="font-bold text-foreground">{comment.authorName || "User"}</p>
+                                                        <p className="text-xs text-muted-foreground">{new Date(comment.createdAt || Date.now()).toLocaleDateString()}</p>
+                                                    </div>
+                                                </div>
+                                                <p className="text-muted-foreground leading-relaxed">{comment.comment}</p>
+                                            </div>
+                                        ))}
+                                    </div>
+                                ) : (
+                                    <div className="w-full bg-muted/30 p-8 rounded-2xl border border-dashed border-border text-center space-y-4">
+                                        <div className="w-16 h-16 bg-card rounded-full flex items-center justify-center mx-auto shadow-sm">
+                                            <MessageCircle className="text-muted-foreground/30" />
+                                        </div>
+                                        <p className="text-muted-foreground font-medium italic">
+                                            Join the conversation. No comments yet on this remarkable story.
+                                        </p>
+                                    </div>
+                                )}
                             </div>
                         </div>
                     </article>
@@ -238,10 +467,10 @@ export default function Article() {
                             </p>
 
                             <div className="space-y-6">
-                                {popularStories.map((story) => (
-                                    <Link to={`/article/${story.id}`} key={story.id} className="flex gap-4 items-center group">
+                                {popularStories.map((story, index) => (
+                                    <Link to={`/article/${story._id || story.id}`} key={story._id || story.id} className="flex gap-4 items-center group">
                                         <p className="flex shrink-0 w-10 h-10 items-center justify-center text-white bg-primary rounded-full text-lg font-grunge shadow-lg shadow-primary/20">
-                                            {story.id}
+                                            {index + 1}
                                         </p>
                                         <p className="font-semibold text-foreground/80 group-hover:text-primary text-xl font-grunge leading-tight transition-colors">
                                             {story.title}

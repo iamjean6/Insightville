@@ -3,7 +3,7 @@ import { Link } from "react-router-dom";
 
 const Card3 = ({ article }) => {
     return (
-        <Link to={`/article/${article.id}`} className="group flex bg-card border border-border rounded-2xl shadow-md p-4 gap-6 mb-6 max-w-3xl h-full transition-all duration-300">
+        <Link to={`/article/${article._id || article.id}`} className="group flex bg-card border border-border rounded-2xl shadow-md p-4 gap-6 mb-6 max-w-3xl h-full transition-all duration-300">
 
             {/* Image */}
             <div className="relative md:w-64 md:h-64 h-56 w-42 flex-shrink-0 overflow-hidden rounded-3xl">
@@ -44,7 +44,7 @@ const Card3 = ({ article }) => {
 
                         <div>
                             <p className="text-sm font-semibold text-foreground">{article.author}</p>
-                            <p className="text-xs text-muted-foreground">{article.date}</p>
+                            <p className="text-xs text-muted-foreground">{new Date(article.date).toLocaleDateString()}</p>
                         </div>
                     </div>
 

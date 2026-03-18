@@ -34,6 +34,10 @@ const BlogSchema = new mongoose.Schema({
         type: Boolean,
         default: false
     },
+    editorsPick: {
+        type: Boolean,
+        default: false
+    },
     date: {
         type: Date,
         default: Date.now
@@ -45,6 +49,9 @@ const BlogSchema = new mongoose.Schema({
     likes: {
         type: Number,
         default: 0
+    },
+    key: {
+        type: String,
     }
 })
 

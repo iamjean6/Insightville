@@ -3,7 +3,7 @@ import { Link } from "react-router-dom";
 
 const Overlay = ({ article }) => {
     return (
-        <Link to={`/article/${article.id}`} className="group relative overflow-hidden rounded-2xl shadow-sm hover:shadow-md transition-shadow duration-300 w-full h-full block">
+        <Link to={`/article/${article._id || article.id}`} className="group relative overflow-hidden rounded-2xl shadow-sm hover:shadow-md transition-shadow duration-300 w-full h-full block">
             <img
                 src={article.image}
                 alt={article.title}
@@ -33,12 +33,12 @@ const Overlay = ({ article }) => {
                     <span>&bull;</span>
                     <div className="flex items-center gap-2">
                         <Calendar size={14} />
-                        <span>{article.date}</span>
+                        <span>{new Date(article.date).toLocaleDateString()}</span>
                     </div>
                     <span>&bull;</span>
                     <div className="flex items-center gap-2">
                         <Eye size={14} />
-                        <span> 20 views</span>
+                        <span>{article.views || 0} views</span>
                     </div>
 
                 </div>

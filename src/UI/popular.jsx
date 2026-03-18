@@ -1,4 +1,4 @@
-import { mockArticles } from "../../constants/indes";
+import { mockArticles } from "../../constants/index";
 import Card4 from "../cards/card4";
 import useEmblaCarousel from 'embla-carousel-react'
 import { useCallback } from 'react'
@@ -56,7 +56,7 @@ export default function Popular() {
                     <div className="flex gap-4 sm:gap-6 -ml-4 pl-4 pt-4 pb-8">
                         {mockArticles.map((article) => (
                             <div
-                                key={article.id}
+                                key={article._id || article.id}
                                 className="flex-[0_0_85%] sm:flex-[0_0_75%] lg:flex-[0_0_30%] min-w-0"
                             >
                                 <Overlay article={article} />
@@ -68,4 +68,4 @@ export default function Popular() {
             </div>
         </div>
     );
-}
+}

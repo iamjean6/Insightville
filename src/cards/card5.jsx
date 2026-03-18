@@ -4,7 +4,7 @@ import { Pencil, Folder, MessageCircle, Calendar } from "lucide-react";
 const Card5 = ({ article }) => {
   return (
     <div className="bg-card border border-border relative rounded-2xl flex flex-col group overflow-hidden hover:shadow-xl transition-all duration-300 h-full">
-      <Link to={`/article/${article.id}`} className="relative w-full h-72 lg:h-80 overflow-hidden shrink-0 block">
+      <Link to={`/article/${article._id || article.id}`} className="relative w-full h-72 lg:h-80 overflow-hidden shrink-0 block">
         <img
           src={article.image}
           alt={article.title}
@@ -21,10 +21,10 @@ const Card5 = ({ article }) => {
       <div className="flex flex-col flex-1 pt-6 px-6 font-vend text-foreground bg-transparent">
         <div className="flex items-center gap-2 text-muted-foreground mb-2">
           <Calendar size={14} />
-          <span>{article.date}</span>
+          <span>{new Date(article.date).toLocaleDateString()}</span>
         </div>
 
-        <Link to={`/article/${article.id}`}>
+        <Link to={`/article/${article._id || article.id}`}>
           <h3 className="text-xl font-extrabold text-foreground leading-snug group-hover:text-primary transition-colors mb-3">
             {article.title}
           </h3>
@@ -49,7 +49,7 @@ const Card5 = ({ article }) => {
           <span className="text-border hidden md:inline">/</span>
           <div className='flex items-center gap-1.5 hover:text-primary transition-colors cursor-pointer'>
             <MessageCircle className="text-primary" size={15} />
-            <span className="whitespace-nowrap">{Math.floor(Math.random() * 40) + 5} Comments</span>
+            <span className="whitespace-nowrap">{article.views || 0} views</span>
           </div>
         </div>
       </div>

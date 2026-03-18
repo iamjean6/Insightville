@@ -1,25 +1,57 @@
-import { mockArticles } from "../../constants/indes";
+import { mockArticles } from "../../constants/index";
 import Card5 from "../cards/card5";
 import Lottie from "lottie-react";
 import Pagination from "../utils/pagination";
 import { useState, useEffect } from "react";
+import { getBlogs } from "../../services/api";
+import { useCategory } from "../utils/CategoryContext";
 
 export default function EditorsPick() {
-    // Use currentPosts for the grid to enable pagination
     const [animationData, setAnimationData] = useState(null);
+    const [posts, setPosts] = useState([]);
+    const [filteredPosts, setFilteredPosts] = useState([]);
+    const { selectedCategory } = useCategory();
     const [currentPage, setCurrentPage] = useState(1);
     const [postsPerPage, setPostsPerPage] = useState(6);
+    const [loading, setLoading] = useState(true);
 
     useEffect(() => {
         fetch("/img/Writing.json")
             .then(res => res.json())
             .then(data => setAnimationData(data))
             .catch(err => console.log("Lottie load error:", err));
+
+        const fetchPosts = async () => {
+            try {
+                const response = await getBlogs();
+                if (response && response.data) {
+                    const picks = response.data.filter(p => p.editorsPick);
+                    setPosts(picks.length > 0 ? picks : mockArticles.filter(p => p.isFeatured));
+                } else {
+                    setPosts(mockArticles.filter(p => p.isFeatured));
+                }
+            } catch (err) {
+                console.warn("API unavailable, using mock data:", err);
+                setPosts(mockArticles.filter(p => p.isFeatured));
+            } finally {
+                setLoading(false);
+            }
+        };
+        fetchPosts();
     }, []);
+
+    useEffect(() => {
+        if (selectedCategory === "All") {
+            setFilteredPosts(posts);
+        } else {
+            setFilteredPosts(posts.filter(post => post.category === selectedCategory));
+        }
+        setCurrentPage(1);
+    }, [selectedCategory, posts]);
 
     const lastPostIndex = currentPage * postsPerPage;
     const firstPostIndex = lastPostIndex - postsPerPage;
-    const currentPosts = mockArticles.slice(firstPostIndex, lastPostIndex);
+    const currentPosts = filteredPosts.slice(firstPostIndex, lastPostIndex);
 
     return (
         <div className="w-full bg-background py-12 transition-colors duration-300">
@@ -46,11 +78,11 @@ export default function EditorsPick() {
 
                 <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
                     {currentPosts.map((article) => (
-                        <Card5 key={article.id} article={article} />
+                        <Card5 key={article._id || article.id} article={article} />
                     ))}
                 </div>
                 <Pagination
-                    totalPosts={mockArticles.length}
+                    totalPosts={filteredPosts.length}
                     postsPerPage={postsPerPage}
                     setCurrentPage={setCurrentPage}
                     currentPage={currentPage}

@@ -4,7 +4,7 @@ import { Link } from "react-router-dom";
 const Standard = ({ article }) => {
     return (
         <div className="group flex flex-col bg-card border border-border rounded-2xl overflow-hidden shadow-sm hover:shadow-md transition-all duration-300 w-full h-full">
-            <Link to={`/article/${article.id}`} className="relative overflow-hidden w-full block">
+            <Link to={`/article/${article._id || article.id}`} className="relative overflow-hidden w-full block">
                 <img
                     src={article.image}
                     alt={article.title}
@@ -19,7 +19,7 @@ const Standard = ({ article }) => {
             </Link>
 
             <div className="p-6 flex flex-col flex-grow">
-                <Link to={`/article/${article.id}`}>
+                <Link to={`/article/${article._id || article.id}`}>
                     <h2 className="text-xl font-bold tracking-tight font-vend text-foreground mb-3 group-hover:text-primary transition-colors">
                         {article.title}
                     </h2>
@@ -35,11 +35,12 @@ const Standard = ({ article }) => {
                     <span>&bull;</span>
                     <div className="flex items-center gap-2">
                         <Calendar size={14} />
-                        <span>{article.date}</span>
+                        <span>{new Date(article.date).toLocaleDateString()}</span>
                     </div>
+                    <span>&bull;</span>
                     <div className="flex items-center gap-2">
                         <Eye size={14} />
-                        <span> 20 views</span>
+                        <span>{article.views || 0} views</span>
                     </div>
                 </div>
             </div>

@@ -3,11 +3,13 @@ import { Link } from "react-router-dom"
 import { Menu, Palette, Check, Sun, Moon } from "lucide-react"
 import Sidebar from "./sidebar"
 import { useTheme } from "../utils/ThemeContext"
+import { useCategory } from "../utils/CategoryContext"
 
 export default function Navbar() {
     const [isSidebarOpen, setIsSidebarOpen] = useState(false)
     const [isThemeOpen, setIsThemeOpen] = useState(false)
     const { theme: currentTheme, setTheme, isDark, toggleDarkMode } = useTheme()
+    const { selectedCategory, setSelectedCategory } = useCategory()
 
     const themes = [
         { name: "Default", id: "default" },
@@ -22,6 +24,7 @@ export default function Navbar() {
     ]
 
     const categories = [
+        "All",
         "Technology",
         "Business",
         "Entertainment",
@@ -35,8 +38,7 @@ export default function Navbar() {
         "Travel",
         "Food",
         "Culture",
-        "Video",
-        "More"
+        "Video"
     ]
     return (
         <nav className="sticky top-0 z-50 w-full bg-background border-b border-border shadow-sm font-sans transition-colors duration-300">
@@ -124,7 +126,12 @@ export default function Navbar() {
                     {[...categories, ...categories, ...categories, ...categories].map((category, idx) => (
                         <div key={`${category}-${idx}`} className="px-2">
                             <button
-                                className="font-righteous flex-shrink-0 rounded-xl border-2 border-primary bg-background px-6 py-2 text-sm uppercase tracking-widest text-primary transition-all duration-200 hover:-translate-y-1 hover:translate-x-1 hover:shadow-[-4px_4px_0px_var(--tw-shadow-color)] shadow-primary hover:bg-card hover:text-primary active:translate-y-0 active:translate-x-0 active:shadow-none whitespace-nowrap"
+                                onClick={() => setSelectedCategory(category)}
+                                className={`font-righteous flex-shrink-0 rounded-xl border-2 px-6 py-2 text-sm uppercase tracking-widest transition-all duration-200 hover:-translate-y-1 hover:translate-x-1 hover:shadow-[-4px_4px_0px_var(--tw-shadow-color)] shadow-primary hover:bg-card hover:text-primary active:translate-y-0 active:translate-x-0 active:shadow-none whitespace-nowrap ${
+                                    selectedCategory === category
+                                    ? "bg-primary text-primary-foreground border-primary shadow-lg"
+                                    : "bg-background text-primary border-primary"
+                                }`}
                             >
                                 {category}
                             </button>
