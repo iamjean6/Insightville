@@ -11,13 +11,13 @@ COPY package*.json ./
 RUN npm install --production
 
 # Force port 5000 for internal networking
-ENV PORT=5000
+ENV PORT=80
 
 # Copy the rest of the application code
 COPY . .
 
 # Expose the port the app runs on
-EXPOSE 5000
+EXPOSE 80
 
 # Set environment variables for production
 ENV NODE_ENV=production

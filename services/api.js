@@ -1,6 +1,8 @@
 import axios from "axios"
 
-const API_URL = "http://localhost:5000/api";
+// In production, Nginx proxies /api requests to the backend.
+// In local dev, Vite uses the VITE_API_URL from .env or defaults to localhost.
+const API_URL = import.meta.env.VITE_API_URL || "/api";
 
 const getAuthHeader = () => {
     const token = localStorage.getItem("token");
