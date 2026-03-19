@@ -3,13 +3,13 @@ version: '3.8'
 services:
   backend:
     build:
-      context: ./backend
+      context: ./Backend
       dockerfile: Dockerfile
     container_name: insightville-backend
     ports:
       - "5000:5000"
     env_file:
-      - ./backend/.env
+      - ./Backend/.env
     restart: always
 
   frontend:
