@@ -76,11 +76,25 @@ export default function EditorsPick() {
                     <div className="border-t-2 border-primary w-16 shadow-lg shadow-primary/40"></div>
                 </div>
 
-                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
-                    {currentPosts.map((article) => (
-                        <Card5 key={article._id || article.id} article={article} />
-                    ))}
-                </div>
+                {filteredPosts.length === 0 ? (
+                    <div className="w-full py-20 text-center rounded-3xl bg-muted/5 backdrop-blur-sm">
+                        <div className="max-w-md mx-auto space-y-4">
+                            <div className="w-24 h-24 bg-card rounded-full flex items-center justify-center mx-auto shadow-sm border border-border">
+                                <img src="/img/jonah.gif" alt="" className="w-full h-full object-cover rounded-full" />
+                            </div>
+                            <h3 className="text-xl font-bold text-foreground font-vend">No articles available</h3>
+                            <p className="text-muted-foreground font-medium italic">
+                                There are currently no articles in the <span className="text-primary font-bold">"{selectedCategory}"</span> category for this section.
+                            </p>
+                        </div>
+                    </div>
+                ) : (
+                    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
+                        {currentPosts.map((article) => (
+                            <Card5 key={article._id || article.id} article={article} />
+                        ))}
+                    </div>
+                )}
                 <Pagination
                     totalPosts={filteredPosts.length}
                     postsPerPage={postsPerPage}

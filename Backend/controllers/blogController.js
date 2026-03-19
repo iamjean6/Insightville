@@ -41,7 +41,7 @@ export const getOneBlog = async (req, res) => {
         } catch (s3err) {
             console.warn("S3 getObject failed for key:", blog.key, s3err.message);
         }
-        
+
         await cache.saveBlogDetail(id, blog);
         console.log("Blog fetched from database, views incremented, and cached");
         return res.status(200).json({ success: true, data: blog });
@@ -57,11 +57,12 @@ export const createBlog = async (req, res) => {
     try {
         console.log("Create Blog Request Body:", req.body);
         console.log("Create Blog Request Files:", req.files ? Object.keys(req.files) : "No files");
-        const { title, excerpt, content, author, category, quote, featured, editorsPick, date } = req.body
-        const { file, authorImageFile } = req.files || {}
-        
+        const { title, excerpt, content, author, category, quote, featured, editorsPick, date, videoUrl } = req.body
+        const { file, authorImageFile, videoFile } = req.files || {}
+
         const fileName = "articles/" + v4()
         const authorImgName = "authors/" + v4()
+        const videoFileName = videoFile ? "videos/" + v4() : null
 
         const missing = [];
         if (!title) missing.push("title");
@@ -99,6 +100,17 @@ export const createBlog = async (req, res) => {
             }
         }
 
+        let finalVideoUrl = videoUrl || null;
+        let videoKey = null;
+
+        if (videoFile) {
+            const videoUpload = await putObject(videoFile.data, videoFileName, videoFile.mimetype);
+            if (videoUpload && videoUpload.url) {
+                finalVideoUrl = videoUpload.url;
+                videoKey = videoUpload.key;
+            }
+        }
+
         const blog = await Blog.create({
             title,
             excerpt,
@@ -110,7 +122,9 @@ export const createBlog = async (req, res) => {
             quote,
             featured: featured === 'true' || featured === true,
             editorsPick: editorsPick === 'true' || editorsPick === true,
-            date,
+            date: date || new Date(),
+            videoUrl: finalVideoUrl,
+            videoKey: videoKey,
             key: uploadResult.key
         });
 
@@ -180,22 +194,23 @@ export const getViews = async (req, res) => {
 export const updateBlog = async (req, res) => {
     try {
         const { id } = req.params;
-        const { title, excerpt, content, author, category, quote, featured, editorsPick, date } = req.body;
+        const { title, excerpt, content, author, category, quote, featured, editorsPick, date, videoUrl } = req.body;
         const files = req.files || {};
-        
+
         const blog = await Blog.findById(id);
         if (!blog) {
             return res.status(404).json({ success: false, message: "Blog not found" });
         }
 
-        let updateData = { 
-            title, 
-            excerpt, 
-            content, 
-            author, 
-            category, 
-            quote, 
+        let updateData = {
+            title,
+            excerpt,
+            content,
+            author,
+            category,
+            quote,
             date,
+            videoUrl: videoUrl !== undefined ? videoUrl : blog.videoUrl,
             featured: featured !== undefined ? (featured === 'true' || featured === true) : blog.featured,
             editorsPick: editorsPick !== undefined ? (editorsPick === 'true' || editorsPick === true) : blog.editorsPick
         };
@@ -219,7 +234,7 @@ export const updateBlog = async (req, res) => {
 
         const updatedBlog = await Blog.findByIdAndUpdate(id, updateData, { new: true });
         await cache.invalidateBlogCache(id);
-        
+
         return res.status(200).json({ success: true, data: updatedBlog });
     } catch (err) {
         console.error("Error updating blog:", err);
@@ -236,15 +251,15 @@ export const deleteBlog = async (req, res) => {
                 "message": "Article not found"
             })
         }
-        
+
         console.log(`Attempting deletion for Article ID: ${id}`);
-        
+
         // Attempt S3 deletion if a key exists
         if (blog.key) {
             console.log(`S3 key found: ${blog.key}. Attempting S3 deletion...`);
             const s3Response = await deleteObject(blog.key);
             console.log("S3 Delete Result:", s3Response);
-            
+
             // We proceed with DB deletion even if S3 fails, but we log the warning
             if (s3Response.status >= 400 && s3Response.status !== 404) {
                 console.warn(`S3 image deletion failed for key ${blog.key} but proceeding with DB deletion: ${s3Response.message}`);
@@ -336,7 +351,7 @@ export const postComment = async (req, res) => {
     try {
         const { id } = req.params;
         const { comment, authorName } = req.body;
-        
+
         if (!comment) {
             return res.status(400).json({ success: false, message: "Comment content is required" });
         }
@@ -348,7 +363,7 @@ export const postComment = async (req, res) => {
             blogId: id,
             comment: comment,
             // Temporary measure: use a dummy ObjectId if userId is required and not provided
-            userId: req.body.userId || new mongoose.Types.ObjectId() 
+            userId: req.body.userId || new mongoose.Types.ObjectId()
         });
 
         await cache.invalidateCommentsCache(id);
@@ -393,5 +408,35 @@ export const getRelatedBlogs = async (req, res) => {
     } catch (err) {
         console.error("Error fetching related blogs:", err);
         return res.status(500).json({ success: false, message: err.message });
+    }
+}
+
+export const getLatestBlogs = async (req, res) => {
+    try {
+        const blogs = await Blog.find().sort({ date: -1 })
+        return res.status(200).json({ success: true, data: blogs })
+    } catch (err) {
+        console.error("Error fetching latest blogs:", err);
+        return res.status(500).json({ success: false, message: err.message })
+    }
+}
+export const getBlogCategory = async (req, res) => {
+    try {
+        const { category } = req.params
+        const blogs = await Blog.find({ category: category })
+        return res.status(200).json({ success: true, data: blogs })
+    } catch (err) {
+        console.error("Error fetching blogs by category:", err);
+        return res.status(500).json({ success: false, message: err.message })
+    }
+}
+
+export const getMedia = async (req, res) => {
+    try {
+        const blogs = await Blog.find({}, 'image videoUrl title author date category');
+        res.status(200).json({ success: true, data: blogs });
+    } catch (err) {
+        console.error("Error fetching media:", err);
+        res.status(500).json({ success: false, message: err.message });
     }
 }

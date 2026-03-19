@@ -17,8 +17,13 @@ import {
     likeBlog,
     postComment,
     getPopularBlogs,
-    getRelatedBlogs
+    getRelatedBlogs,
+    getLatestBlogs,
+    getBlogCategory,
+    getMedia
 } from "./controllers/blogController.js";
+import { login, register } from "./controllers/authController.js";
+import { protect } from "./middleware/authMiddleware.js";
 import { streamTTS } from "./controllers/ttsController.js";
 import mongoose from "mongoose";
 
@@ -56,21 +61,32 @@ app.use("/api/", limiter);
 app.get("/", (req, res) => {
     res.send("Insightville Backend is running");
 });
-// Routes
+// Auth Routes
+app.post("/api/auth/login", login);
+app.post("/api/auth/register", register); // Initially open, can be protected later
+
+// Blog Routes
 app.get("/api/blogs", getBlogs);
 app.get("/api/blogs/popular", getPopularBlogs);
+app.get("/api/blogs/latest", getLatestBlogs);
+app.get("/api/blogs/category/:category", getBlogCategory);
 app.get("/api/blogs/:id", getOneBlog);
 app.get("/api/blogs/:id/related", getRelatedBlogs);
-app.post("/api/blogs", createBlog);
-app.put("/api/blogs/:id", updateBlog);
-app.delete("/api/blogs/:id", deleteBlog);
-app.patch("/api/blogs/:id/like", likeBlog);
 
-// Comments
+// Protected Blog Routes
+app.post("/api/blogs", protect, createBlog);
+app.put("/api/blogs/:id", protect, updateBlog);
+app.delete("/api/blogs/:id", protect, deleteBlog);
+app.patch("/api/blogs/:id/status", protect, updateBlogStatus);
+app.get("/api/media", protect, getMedia);
+
+app.patch("/api/blogs/:id/like", likeBlog);
+app.post("/api/blogs/:id/comments", postComment);
+
+// Protected Comment Routes
+app.delete("/api/comments/:id", protect, deleteComment);
 app.get("/api/comments", getAllComments);
 app.get("/api/blogs/:id/comments", getComments);
-app.post("/api/blogs/:id/comments", postComment);
-app.delete("/api/comments/:id", deleteComment);
 
 // Text to Speech
 app.post("/api/tts", streamTTS);

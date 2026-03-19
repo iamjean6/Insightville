@@ -1,26 +1,34 @@
 import React, { useState, useRef } from 'react';
 import { Save, Image as ImageIcon, X, Send, Eye, Type, Tag, ChevronLeft, Upload, FileVideo, CheckCircle2, User, Zap, Star } from 'lucide-react';
-import { Link, useNavigate } from 'react-router-dom';
-import { createBlog } from '../../services/api';
+import { Link, useNavigate, useParams } from 'react-router-dom';
+import { createBlog, updateBlog, getOneBlog } from '../../services/api';
 import { useSnackbar } from 'notistack';
+import { useEffect } from 'react';
 
 export default function ArticleEditor() {
   const navigate = useNavigate();
+  const { id } = useParams();
+  const isEditing = !!id;
+  
   const { enqueueSnackbar } = useSnackbar();
   const fileInputRef = useRef(null);
   const authorInputRef = useRef(null);
-  
+  const videoInputRef = useRef(null);
+
   const [dragActive, setDragActive] = useState(false);
   const [authorDragActive, setAuthorDragActive] = useState(false);
+  const [videoDragActive, setVideoDragActive] = useState(false);
   const [isPublishing, setIsPublishing] = useState(false);
 
-  
+
   const [preview, setPreview] = useState(null);
   const [authorPreview, setAuthorPreview] = useState(null);
-  
+  const [videoPreview, setVideoPreview] = useState(null);
+
   const [files, setFiles] = useState({
     coverImg: null,
-    authorImg: null
+    authorImg: null,
+    videoFile: null
   });
 
   const [formData, setFormData] = useState({
@@ -32,22 +40,68 @@ export default function ArticleEditor() {
     tags: '',
     featured: false,
     editorsPick: false,
-    quote: ''
+    quote: '',
+    videoUrl: ''
   });
 
-  const categories = ["Technology", "Business", "Entertainment", "Sports", "Health", "Science", "World"];
+  const categories = ["Politics", "Technology", "Business", "Environment", "National", "County", "Health", "Education", "Sports", "Opinion", "Investigation"];
+
+  // Load draft from local storage on mount
+  useEffect(() => {
+    if (!isEditing) {
+      const savedDraft = localStorage.getItem('article_draft');
+      if (savedDraft) {
+        setFormData(JSON.parse(savedDraft));
+      }
+    } else {
+      // Fetch blog data for editing
+      const fetchBlog = async () => {
+         try {
+           const res = await getOneBlog(id);
+           if (res.success) {
+             const blog = res.data;
+             setFormData({
+               title: blog.title || '',
+               excerpt: blog.excerpt || '',
+               category: blog.category || 'Technology',
+               author: blog.author || '',
+               content: blog.content || '',
+               tags: blog.tags || '',
+               featured: blog.featured || false,
+               editorsPick: blog.editorsPick || false,
+               quote: blog.quote || '',
+               videoUrl: blog.videoUrl || ''
+             });
+             if (blog.image) setPreview({ url: blog.image, type: 'image' });
+             if (blog.authorImage) setAuthorPreview({ url: blog.authorImage });
+             if (blog.videoUrl) setVideoPreview({ url: blog.videoUrl, type: 'video' });
+           }
+         } catch (err) {
+           enqueueSnackbar('Failed to fetch article data', { variant: 'error' });
+         }
+      };
+      fetchBlog();
+    }
+  }, [id, isEditing, enqueueSnackbar]);
+
+  // Save draft to local storage on change
+  useEffect(() => {
+    if (!isEditing) {
+      localStorage.setItem('article_draft', JSON.stringify(formData));
+    }
+  }, [formData, isEditing]);
 
   const handleChange = (e) => {
     const { name, value, type, checked } = e.target;
-    setFormData(prev => ({ 
-      ...prev, 
-      [name]: type === 'checkbox' ? checked : value 
+    setFormData(prev => ({
+      ...prev,
+      [name]: type === 'checkbox' ? checked : value
     }));
   };
 
   const handleFile = (file, type) => {
     if (!file) return;
-    
+
     const reader = new FileReader();
     reader.onload = (e) => {
       if (type === 'cover') {
@@ -57,12 +111,19 @@ export default function ArticleEditor() {
           name: file.name
         });
         setFiles(prev => ({ ...prev, coverImg: file }));
-      } else {
+      } else if (type === 'author') {
         setAuthorPreview({
           url: e.target.result,
           name: file.name
         });
         setFiles(prev => ({ ...prev, authorImg: file }));
+      } else if (type === 'video') {
+          setVideoPreview({
+            url: e.target.result,
+            type: 'video',
+            name: file.name
+          });
+          setFiles(prev => ({ ...prev, videoFile: file }));
       }
     };
     reader.readAsDataURL(file);
@@ -72,31 +133,37 @@ export default function ArticleEditor() {
     e.preventDefault();
     e.stopPropagation();
     if (e.type === "dragenter" || e.type === "dragover") {
-      type === 'cover' ? setDragActive(true) : setAuthorDragActive(true);
+      if (type === 'cover') setDragActive(true);
+      else if (type === 'author') setAuthorDragActive(true);
+      else if (type === 'video') setVideoDragActive(true);
     } else if (e.type === "dragleave") {
-      type === 'cover' ? setDragActive(false) : setAuthorDragActive(false);
+      if (type === 'cover') setDragActive(false);
+      else if (type === 'author') setAuthorDragActive(false);
+      else if (type === 'video') setVideoDragActive(false);
     }
   };
 
   const handleDrop = (e, type) => {
     e.preventDefault();
     e.stopPropagation();
-    type === 'cover' ? setDragActive(false) : setAuthorDragActive(false);
+    setDragActive(false);
+    setAuthorDragActive(false);
+    setVideoDragActive(false);
     if (e.dataTransfer.files && e.dataTransfer.files[0]) {
       handleFile(e.dataTransfer.files[0], type);
     }
   };
 
   const handleSubmit = async (e) => {
-    e.preventDefault();
-    
+    if (e) e.preventDefault();
+
     // Detailed validation
     const missingFields = [];
     if (!formData.title) missingFields.push("Title");
     if (!formData.excerpt) missingFields.push("Excerpt");
     if (!formData.content) missingFields.push("Content");
     if (!formData.author) missingFields.push("Author Name");
-    if (!files.coverImg) missingFields.push("Cover Image");
+    if (!isEditing && !files.coverImg) missingFields.push("Cover Image");
 
     if (missingFields.length > 0) {
       enqueueSnackbar(`Missing required fields: ${missingFields.join(", ")}`, { variant: 'warning' });
@@ -113,21 +180,27 @@ export default function ArticleEditor() {
       data.append('quote', formData.quote);
       data.append('featured', formData.featured);
       data.append('editorsPick', formData.editorsPick);
+      data.append('videoUrl', formData.videoUrl);
       data.append('date', new Date().toISOString());
-      
-      data.append('file', files.coverImg);
-      if (files.authorImg) {
-        data.append('authorImageFile', files.authorImg);
-      }
+
+      if (files.coverImg) data.append('file', files.coverImg);
+      if (files.authorImg) data.append('authorImageFile', files.authorImg);
+      if (files.videoFile) data.append('videoFile', files.videoFile);
 
       setIsPublishing(true);
-      await createBlog(data);
-      enqueueSnackbar('Article published successfully!', { variant: 'success' });
-      navigate('/admin');
+      if (isEditing) {
+          await updateBlog(id, data);
+          enqueueSnackbar('Article updated successfully!', { variant: 'success' });
+      } else {
+          await createBlog(data);
+          enqueueSnackbar('Article published successfully!', { variant: 'success' });
+          localStorage.removeItem('article_draft'); // Clear draft on success
+      }
+      navigate('/dashboard');
     } catch (err) {
       console.error('Submit error:', err);
       const errorMsg = err.response?.data?.message || err.message || "An unknown error occurred";
-      enqueueSnackbar(`Publish failed: ${errorMsg}`, { variant: 'error' });
+      enqueueSnackbar(`${isEditing ? 'Update' : 'Publish'} failed: ${errorMsg}`, { variant: 'error' });
     } finally {
       setIsPublishing(false);
     }
@@ -139,14 +212,14 @@ export default function ArticleEditor() {
       <div className="sticky top-0 bg-card/80 backdrop-blur-md border-b border-border z-10 px-6 py-4">
         <div className="max-w-5xl mx-auto flex items-center justify-between">
           <div className="flex items-center gap-4">
-            <Link to="/admin" className="p-2 hover:bg-muted rounded-full transition-colors">
+            <Link to="/dashboard" className="p-2 hover:bg-muted rounded-full transition-colors">
               <ChevronLeft size={24} />
             </Link>
-            <h1 className="text-xl font-bold font-righteous uppercase tracking-wider">New Article</h1>
+            <h1 className="text-xl font-bold font-righteous uppercase tracking-wider">{isEditing ? 'Edit Article' : 'New Article'}</h1>
           </div>
           <div className="flex items-center gap-3">
-            <button 
-              onClick={handleSubmit}
+            <button
+              onClick={() => handleSubmit()}
               disabled={isPublishing}
               className={`flex items-center gap-2 bg-primary text-primary-foreground px-6 py-2 rounded-full font-bold transition-all shadow-lg shadow-primary/20 ${isPublishing ? 'opacity-70 cursor-not-allowed' : 'hover:opacity-90'}`}
             >
@@ -183,11 +256,11 @@ export default function ArticleEditor() {
             </div>
 
             <div className="space-y-4">
-               <div className="flex items-center gap-2 text-muted-foreground">
-                  <Type size={18} />
-                  <span className="text-sm font-bold font-changa uppercase">Excerpt</span>
-               </div>
-               <textarea
+              <div className="flex items-center gap-2 text-muted-foreground">
+                <Type size={18} />
+                <span className="text-sm font-bold font-changa uppercase">Excerpt</span>
+              </div>
+              <textarea
                 name="excerpt"
                 value={formData.excerpt}
                 onChange={handleChange}
@@ -197,7 +270,7 @@ export default function ArticleEditor() {
             </div>
 
             <div className="space-y-4 pt-4 border-t border-border">
-               <textarea
+              <textarea
                 name="content"
                 value={formData.content}
                 onChange={handleChange}
@@ -205,12 +278,12 @@ export default function ArticleEditor() {
                 className="w-full bg-transparent border-none focus:ring-0 text-xl font-sans leading-relaxed min-h-[400px] p-0 resize-none"
               />
             </div>
-            
+
             <div className="space-y-4 pt-4 border-t border-border">
-               <div className="flex items-center gap-2 text-muted-foreground">
-                  <span className="text-sm font-bold font-changa uppercase">Pull Quote</span>
-               </div>
-               <textarea
+              <div className="flex items-center gap-2 text-muted-foreground">
+                <span className="text-sm font-bold font-changa uppercase">Pull Quote</span>
+              </div>
+              <textarea
                 name="quote"
                 value={formData.quote}
                 onChange={handleChange}
@@ -226,14 +299,14 @@ export default function ArticleEditor() {
                 <Tag size={18} className="text-primary" />
                 <h3 className="font-bold font-righteous uppercase tracking-tighter">Visibility & Story</h3>
               </div>
-              
+
               <div className="space-y-4">
                 <div className="flex items-center justify-between p-3 bg-muted/30 rounded-xl border border-border/50">
                   <div className="flex items-center gap-2">
                     <Zap size={16} className={formData.featured ? "text-emerald-500" : "text-muted-foreground"} />
                     <span className="text-xs font-bold uppercase">Featured Story</span>
                   </div>
-                  <input 
+                  <input
                     type="checkbox"
                     name="featured"
                     checked={formData.featured}
@@ -241,13 +314,13 @@ export default function ArticleEditor() {
                     className="w-5 h-5 rounded-md border-border text-primary focus:ring-primary/20"
                   />
                 </div>
-                
+
                 <div className="flex items-center justify-between p-3 bg-muted/30 rounded-xl border border-border/50">
                   <div className="flex items-center gap-2">
                     <Star size={16} className={formData.editorsPick ? "text-amber-500" : "text-muted-foreground"} />
                     <span className="text-xs font-bold uppercase">Editor's Pick</span>
                   </div>
-                  <input 
+                  <input
                     type="checkbox"
                     name="editorsPick"
                     checked={formData.editorsPick}
@@ -258,7 +331,7 @@ export default function ArticleEditor() {
 
                 <div>
                   <label className="text-xs text-muted-foreground font-bold uppercase mb-2 block">Primary Category</label>
-                  <select 
+                  <select
                     name="category"
                     value={formData.category}
                     onChange={handleChange}
@@ -272,29 +345,85 @@ export default function ArticleEditor() {
 
             <div className="bg-card border border-border rounded-3xl p-6 shadow-sm">
               <div className="flex items-center gap-2 mb-4">
-                <ImageIcon size={18} className="text-primary" />
-                <h3 className="font-bold font-righteous uppercase tracking-tighter">Feature Media</h3>
+                <FileVideo size={18} className="text-primary" />
+                <h3 className="font-bold font-righteous uppercase tracking-tighter">Video Story (Optional)</h3>
               </div>
               
               <div className="space-y-4">
-                <div 
+                <div>
+                  <label className="text-xs text-muted-foreground font-bold uppercase mb-2 block">Video URL (YouTube/Vimeo/Direct)</label>
+                  <input
+                    type="text"
+                    name="videoUrl"
+                    value={formData.videoUrl}
+                    onChange={handleChange}
+                    placeholder="https://..."
+                    className="w-full bg-muted/50 border border-border rounded-xl px-4 py-2 text-sm focus:ring-2 focus:ring-primary/20 outline-none"
+                  />
+                </div>
+
+                <div className="relative border-t border-border/50 pt-4 mt-2">
+                   <div className="flex items-center justify-center mb-2">
+                      <span className="text-[10px] font-bold text-muted-foreground uppercase px-2 bg-card relative z-10">Or Upload Video</span>
+                   </div>
+                   <div
+                    onDragEnter={(e) => handleDrag(e, 'video')}
+                    onDragLeave={(e) => handleDrag(e, 'video')}
+                    onDragOver={(e) => handleDrag(e, 'video')}
+                    onDrop={(e) => handleDrop(e, 'video')}
+                    className={`relative cursor-pointer border-2 border-dashed rounded-2xl p-4 transition-all flex flex-col items-center justify-center text-center ${videoDragActive ? 'border-primary bg-primary/5 scale-[0.98]' : 'border-border hover:border-primary/50'}`}
+                    onClick={() => videoInputRef.current.click()}
+                  >
+                    <input
+                      ref={videoInputRef}
+                      type="file"
+                      className="hidden"
+                      accept="video/*"
+                      onChange={(e) => handleFile(e.target.files[0], 'video')}
+                    />
+                    {videoPreview ? (
+                      <div className="flex items-center gap-3 w-full">
+                         <FileVideo className="text-primary" size={24} />
+                         <div className="text-left overflow-hidden">
+                            <p className="text-[10px] font-bold text-emerald-500 uppercase">Video Attached</p>
+                            <p className="text-[10px] text-muted-foreground truncate max-w-[150px]">{videoPreview.name || 'Video Attached'}</p>
+                         </div>
+                      </div>
+                    ) : (
+                      <>
+                        <Upload size={18} className="text-muted-foreground mb-1" />
+                        <p className="text-xs font-bold uppercase tracking-tighter">Upload Video</p>
+                      </>
+                    )}
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            <div className="bg-card border border-border rounded-3xl p-6 shadow-sm">
+              <div className="flex items-center gap-2 mb-4">
+                <ImageIcon size={18} className="text-primary" />
+                <h3 className="font-bold font-righteous uppercase tracking-tighter">Feature Media</h3>
+              </div>
+
+              <div className="space-y-4">
+                <div
                   onDragEnter={(e) => handleDrag(e, 'cover')}
                   onDragLeave={(e) => handleDrag(e, 'cover')}
                   onDragOver={(e) => handleDrag(e, 'cover')}
                   onDrop={(e) => handleDrop(e, 'cover')}
-                  className={`relative cursor-pointer border-2 border-dashed rounded-2xl p-6 transition-all flex flex-col items-center justify-center text-center ${
-                    dragActive ? 'border-primary bg-primary/5 scale-[0.98]' : 'border-border hover:border-primary/50'
-                  }`}
+                  className={`relative cursor-pointer border-2 border-dashed rounded-2xl p-6 transition-all flex flex-col items-center justify-center text-center ${dragActive ? 'border-primary bg-primary/5 scale-[0.98]' : 'border-border hover:border-primary/50'
+                    }`}
                   onClick={() => fileInputRef.current.click()}
                 >
-                  <input 
+                  <input
                     ref={fileInputRef}
-                    type="file" 
-                    className="hidden" 
+                    type="file"
+                    className="hidden"
                     accept="image/*,video/*"
                     onChange={(e) => handleFile(e.target.files[0], 'cover')}
                   />
-                  
+
                   {preview ? (
                     <div className="space-y-2 w-full">
                       {preview.type === 'video' ? (
@@ -328,24 +457,23 @@ export default function ArticleEditor() {
                 <h3 className="font-bold font-righteous uppercase tracking-tighter">Author Info</h3>
               </div>
               <div className="space-y-4">
-                <div 
+                <div
                   onDragEnter={(e) => handleDrag(e, 'author')}
                   onDragLeave={(e) => handleDrag(e, 'author')}
                   onDragOver={(e) => handleDrag(e, 'author')}
                   onDrop={(e) => handleDrop(e, 'author')}
-                  className={`relative cursor-pointer border-2 border-dashed rounded-2xl p-4 transition-all flex flex-col items-center justify-center text-center ${
-                    authorDragActive ? 'border-primary bg-primary/5 scale-[0.98]' : 'border-border hover:border-primary/50'
-                  }`}
+                  className={`relative cursor-pointer border-2 border-dashed rounded-2xl p-4 transition-all flex flex-col items-center justify-center text-center ${authorDragActive ? 'border-primary bg-primary/5 scale-[0.98]' : 'border-border hover:border-primary/50'
+                    }`}
                   onClick={() => authorInputRef.current.click()}
                 >
-                  <input 
+                  <input
                     ref={authorInputRef}
-                    type="file" 
-                    className="hidden" 
+                    type="file"
+                    className="hidden"
                     accept="image/*"
                     onChange={(e) => handleFile(e.target.files[0], 'author')}
                   />
-                  
+
                   {authorPreview ? (
                     <div className="flex items-center gap-3 w-full">
                       <img src={authorPreview.url} className="w-12 h-12 rounded-full object-cover border border-border" alt="Author" />
@@ -368,12 +496,12 @@ export default function ArticleEditor() {
                 </div>
 
                 <input
-                    type="text"
-                    name="author"
-                    value={formData.author}
-                    onChange={handleChange}
-                    placeholder="Author Name"
-                    className="w-full bg-muted/50 border border-border rounded-xl px-4 py-2 text-sm focus:ring-2 focus:ring-primary/20 outline-none"
+                  type="text"
+                  name="author"
+                  value={formData.author}
+                  onChange={handleChange}
+                  placeholder="Author Name"
+                  className="w-full bg-muted/50 border border-border rounded-xl px-4 py-2 text-sm focus:ring-2 focus:ring-primary/20 outline-none"
                 />
               </div>
             </div>

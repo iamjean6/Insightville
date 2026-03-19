@@ -52,6 +52,12 @@ const BlogSchema = new mongoose.Schema({
     },
     key: {
         type: String,
+    },
+    videoUrl: {
+        type: String,
+    },
+    videoKey: {
+        type: String,
     }
 })
 

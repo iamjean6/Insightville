@@ -68,12 +68,25 @@ export default function Featuredstories() {
                 <p className="text-muted-foreground max-w-2xl mx-auto mb-8">Explore our curated collection of featured stories and in-depth articles across trending categories.</p>
             </div>
 
-            {/* Masonry Container */}
-            <div className="columns-1 md:columns-2 lg:columns-3 gap-6">
-                {currentPosts.map((article) => (
-                    <ArticleCard key={article._id || article.id} article={article} />
-                ))}
-            </div>
+            {filteredPosts.length === 0 ? (
+                <div className="w-full py-20 text-center rounded-3xl  ">
+                    <div className="max-w-md mx-auto space-y-4">
+                        <div className="w-24 h-24 bg-card rounded-full flex items-center justify-center mx-auto shadow-sm border border-border">
+                            <img src="/img/not_found.gif" alt="" className="w-full h-full object-cover rounded-full" />
+                        </div>
+                        <h3 className="text-xl font-bold text-foreground font-vend">No articles available</h3>
+                        <p className="text-muted-foreground font-medium italic">
+                            There are currently no articles in the <span className="text-primary font-bold">"{selectedCategory}"</span> category for this section.
+                        </p>
+                    </div>
+                </div>
+            ) : (
+                <div className="columns-1 md:columns-2 lg:columns-3 gap-6">
+                    {currentPosts.map((article) => (
+                        <ArticleCard key={article._id || article.id} article={article} />
+                    ))}
+                </div>
+            )}
 
             <Pagination
                 totalPosts={filteredPosts.length}
