@@ -10,6 +10,9 @@ COPY package*.json ./
 # Install dependencies
 RUN npm install --production
 
+# Force port 5000 for internal networking
+ENV PORT=5000
+
 # Copy the rest of the application code
 COPY . .
 
