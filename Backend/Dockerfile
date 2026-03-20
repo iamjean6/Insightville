@@ -1,3 +1,8 @@
+# DEPRECATED: This Dockerfile is no longer used in production.
+# The backend is now built and run as part of the root Dockerfile,
+# which uses supervisord to manage both nginx and Node.js in a single container.
+# This file is kept for reference only.
+
 # Use an official Node.js runtime as a parent image
 FROM node:20-alpine
 
