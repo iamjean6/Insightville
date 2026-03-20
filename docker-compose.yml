@@ -1,24 +1,16 @@
 version: '3.8'
 
+# Local development compose file.
+# In production (Railway), the root Dockerfile builds both frontend and backend
+# into a single container managed by supervisord.
 services:
-  backend:
-    build:
-      context: ./Backend
-      dockerfile: Dockerfile
-    container_name: insightville-backend
-    ports:
-      - "5000:80"
-    env_file:
-      - ./Backend/.env
-    restart: always
-
-  frontend:
+  app:
     build:
       context: .
       dockerfile: Dockerfile
-    container_name: insightville-frontend
+    container_name: insightville
     ports:
       - "80:80"
-    depends_on:
-      - backend
+    env_file:
+      - ./Backend/.env
     restart: always
