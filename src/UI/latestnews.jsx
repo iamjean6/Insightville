@@ -8,7 +8,7 @@ import Pagination from "../utils/pagination";
 export default function Latestnews() {
     const [posts, setPosts] = useState([]);
     const [filteredPosts, setFilteredPosts] = useState([]);
-    const { selectedCategory } = useCategory();
+    const { selectedCategory, selectedSubcategory } = useCategory();
     const [loading, setLoading] = useState(true);
     const [currentPage, setCurrentPage] = useState(1);
     const [postsPerPage, setPostsPerPage] = useState(6);
@@ -21,7 +21,7 @@ export default function Latestnews() {
                 if (selectedCategory === "All") {
                     response = await getLatestBlogs();
                 } else {
-                    response = await getBlogsByCategory(selectedCategory);
+                    response = await getBlogsByCategory(selectedCategory, selectedSubcategory);
                 }
 
                 if (response && response.success) {
@@ -47,7 +47,7 @@ export default function Latestnews() {
         };
         fetchPosts();
         setCurrentPage(1);
-    }, [selectedCategory]);
+    }, [selectedCategory, selectedSubcategory]);
 
     const lastPostIndex = currentPage * postsPerPage;
     const firstPostIndex = lastPostIndex - postsPerPage;

@@ -12,7 +12,8 @@ export default function Footer() {
                     <div className="flex flex-col">
                         <p className="text-3xl font-alfa text-primary tracking-wide drop-shadow-sm mb-6">Insightville</p>
                         <p className="text-muted-foreground text-sm leading-relaxed font-changa mb-6">
-                            Your premier destination for unearthing extraordinary stories, deep-dive tech tutorials, and cultural insights across the globe.
+                            Insightville is a digital news platform delivering timely, accurate, and in-depth coverage across a wide spectrum of topics.
+                            We deliver credible journalism that informs, educates, and drives conversation.
                         </p>
                         {/* Social Links */}
                         <div className="flex gap-4">
@@ -51,7 +52,7 @@ export default function Footer() {
                             <span className="w-6 h-px bg-primary"></span> Collaborate
                         </h4>
                         <p className="text-muted-foreground text-sm font-changa mb-4">
-                            Are you a passionate writer or an industry expert? Join our growing community of contributors.
+                            Partner with Insightville to reach a diverse and engaged audience. We offer tailored advertising solutions across our digital platforms to help amplify your brand and connect with the right audience.
                         </p>
                         <button className="bg-transparent border border-primary text-primary hover:bg-primary/10 font-vend px-5 py-2 rounded-lg transition-colors w-full text-center">
                             Write for Us
@@ -61,16 +62,16 @@ export default function Footer() {
                     {/* Contact Info */}
                     <div>
                         <h4 className="text-foreground font-righteous uppercase tracking-widest text-lg mb-6 flex items-center gap-2">
-                            <span className="w-6 h-px bg-primary"></span> Contact
+                            <span className="w-6 h-px bg-primary"></span>Contact Us
                         </h4>
                         <ul className="flex flex-col gap-4 font-vend text-muted-foreground text-sm">
                             <li className="flex items-start gap-3 hover:text-primary transition-colors">
                                 <MapPin size={18} className="text-primary shrink-0 mt-0.5" />
-                                <span>123 Innovation Drive, Tech District<br />Neo City, NC 40982</span>
+                                <span>P.O. Box 40100<br />KISUMU, Kenya</span>
                             </li>
                             <li className="flex items-center gap-3 hover:text-primary transition-colors">
                                 <Phone size={18} className="text-primary shrink-0" />
-                                <span>+1 (555) 123-4567</span>
+                                <span>+254 705748503</span>
                             </li>
                             <li className="flex items-center gap-3 hover:text-primary transition-colors cursor-pointer">
                                 <Mail size={18} className="text-primary shrink-0" />
@@ -84,7 +85,7 @@ export default function Footer() {
                 {/* Bottom Bar */}
                 <div className="border-t border-border pt-8 flex flex-col md:flex-row justify-between items-center gap-4 text-xs font-vend text-muted-foreground">
                     <p>&copy; {new Date().getFullYear()} Insightville. All rights reserved.</p>
-
+                    <p>Powered by <span className="text-primary">UrbanvilleSports</span></p>
                 </div>
 
             </div>

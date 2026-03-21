@@ -1,6 +1,6 @@
-import { useState } from "react"
+import { useState, useRef, useEffect } from "react"
 import { Link } from "react-router-dom"
-import { Menu, Palette, Check, Sun, Moon } from "lucide-react"
+import { Menu, Palette, Check, Sun, Moon, ChevronLeft, ChevronRight } from "lucide-react"
 import Sidebar from "./sidebar"
 import { useTheme } from "../utils/ThemeContext"
 import { useCategory } from "../utils/CategoryContext"
@@ -9,7 +9,34 @@ export default function Navbar() {
     const [isSidebarOpen, setIsSidebarOpen] = useState(false)
     const [isThemeOpen, setIsThemeOpen] = useState(false)
     const { theme: currentTheme, setTheme, isDark, toggleDarkMode } = useTheme()
-    const { selectedCategory, setSelectedCategory } = useCategory()
+    const { selectedCategory, setSelectedCategory, selectedSubcategory, setSelectedSubcategory } = useCategory()
+
+    const scrollRef = useRef(null);
+    const [showLeftArrow, setShowLeftArrow] = useState(false);
+    const [showRightArrow, setShowRightArrow] = useState(false);
+
+    const checkScroll = () => {
+        if (scrollRef.current) {
+            const { scrollLeft, scrollWidth, clientWidth } = scrollRef.current;
+            setShowLeftArrow(scrollLeft > 10);
+            setShowRightArrow(scrollLeft < scrollWidth - clientWidth - 10);
+        }
+    };
+
+    useEffect(() => {
+        const timeout = setTimeout(checkScroll, 100);
+        return () => clearTimeout(timeout);
+    }, [selectedCategory]);
+
+    const handleScrollAction = (direction) => {
+        if (scrollRef.current) {
+            const scrollAmount = 200;
+            scrollRef.current.scrollBy({
+                left: direction === 'left' ? -scrollAmount : scrollAmount,
+                behavior: 'smooth'
+            });
+        }
+    };
 
     const themes = [
         { name: "Default", id: "default" },
@@ -23,7 +50,10 @@ export default function Navbar() {
 
     ]
 
-    const categories = ["All", "Politics", "Technology", "Business", "Environment", "National", "County", "Health", "Education", "Sports", "Opinion", "Investigation"];
+    const categories = ["All", "Urbanville", "Politics", "Technology", "Business", "Environment", "Gender", "Counties", "Health", "Education", "Sports", "Opinion", "Investigation"];
+    const subcategories = {
+        "Sports": ["UrbanVille", "Football", "Basketball", "Athletics", "Rugby", "Tennis", "Boxing", "Cricket"],
+    };
 
     return (
         <nav className="sticky top-0 z-50 w-full bg-background border-b border-border shadow-sm font-sans transition-colors duration-300">
@@ -43,7 +73,7 @@ export default function Navbar() {
                         <Link to="/about" className="font-changa hidden md:block text-muted-foreground hover:text-primary tracking-wide transition-colors">
                             About
                         </Link>
-                        <Link to="/features" className="font-changa hidden md:block text-muted-foreground hover:text-primary tracking-wide transition-colors">
+                        <Link to="/contact" className="font-changa hidden md:block text-muted-foreground hover:text-primary tracking-wide transition-colors">
                             Contact us
                         </Link>
 
@@ -113,8 +143,8 @@ export default function Navbar() {
                             <button
                                 onClick={() => setSelectedCategory(category)}
                                 className={`font-righteous flex-shrink-0 rounded-xl border-2 px-6 py-2 text-sm uppercase tracking-widest transition-all duration-200 hover:-translate-y-1 hover:translate-x-1 hover:shadow-[-4px_4px_0px_var(--tw-shadow-color)] shadow-primary hover:bg-card hover:text-primary active:translate-y-0 active:translate-x-0 active:shadow-none whitespace-nowrap ${selectedCategory === category
-                                        ? "bg-primary text-primary-foreground border-primary shadow-lg"
-                                        : "bg-background text-primary border-primary"
+                                    ? "bg-primary text-primary-foreground border-primary shadow-lg"
+                                    : "bg-background text-primary border-primary"
                                     }`}
                             >
                                 {category}
@@ -123,6 +153,57 @@ export default function Navbar() {
                     ))}
                 </div>
             </div>
+
+            {/* Sub-Categories Bar (Visible only when category has subcategories) */}
+            {subcategories[selectedCategory] && (
+                <div className="w-full bg-accent/10 border-t border-primary/10 overflow-hidden animate-in fade-in slide-in-from-top-1 duration-500 relative group/sub">
+                    {/* Left Arrow */}
+                    {showLeftArrow && (
+                        <button 
+                            onClick={() => handleScrollAction('left')}
+                            className="absolute left-0 top-0 bottom-0 z-10 px-1 bg-gradient-to-r from-background to-transparent text-primary hover:scale-110 transition-all hidden md:flex items-center"
+                        >
+                            <ChevronLeft size={24} strokeWidth={3} />
+                        </button>
+                    )}
+
+                    <div 
+                        ref={scrollRef}
+                        onScroll={checkScroll}
+                        className="max-w-7xl mx-auto px-4 py-2 flex gap-3 overflow-x-auto no-scrollbar items-center justify-start md:justify-center"
+                    >
+                        <button
+                            onClick={() => setSelectedSubcategory("")}
+                            className={`px-4 py-1.5 rounded-full text-xs font-bold uppercase tracking-widest transition-all ${selectedSubcategory === ""
+                                ? "bg-primary text-primary-foreground shadow-md"
+                                : "bg-muted text-muted-foreground hover:bg-primary/20 hover:text-primary"}`}
+                        >
+                            All {selectedCategory}
+                        </button>
+                        {subcategories[selectedCategory].map((sub) => (
+                            <button
+                                key={sub}
+                                onClick={() => setSelectedSubcategory(sub)}
+                                className={`px-4 py-1.5 rounded-full text-xs font-bold uppercase tracking-widest transition-all whitespace-nowrap ${selectedSubcategory === sub
+                                    ? "bg-primary text-primary-foreground shadow-md"
+                                    : "bg-muted text-muted-foreground hover:bg-primary/20 hover:text-primary"}`}
+                            >
+                                {sub}
+                            </button>
+                        ))}
+                    </div>
+
+                    {/* Right Arrow */}
+                    {showRightArrow && (
+                        <button 
+                            onClick={() => handleScrollAction('right')}
+                            className="absolute right-0 top-0 bottom-0 z-10 px-1 bg-gradient-to-l from-background to-transparent text-primary hover:scale-110 transition-all hidden md:flex items-center"
+                        >
+                            <ChevronRight size={24} strokeWidth={3} />
+                        </button>
+                    )}
+                </div>
+            )}
         </nav>
     )
 }

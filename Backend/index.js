@@ -20,7 +20,8 @@ import {
     getRelatedBlogs,
     getLatestBlogs,
     getBlogCategory,
-    getMedia
+    getMedia,
+    getBreakingBlogs
 } from "./controllers/blogController.js";
 import { login, register } from "./controllers/authController.js";
 import { protect } from "./middleware/authMiddleware.js";
@@ -69,6 +70,7 @@ app.post("/api/auth/register", register); // Initially open, can be protected la
 app.get("/api/blogs", getBlogs);
 app.get("/api/blogs/popular", getPopularBlogs);
 app.get("/api/blogs/latest", getLatestBlogs);
+app.get("/api/blogs/breaking", getBreakingBlogs);
 app.get("/api/blogs/category/:category", getBlogCategory);
 app.get("/api/blogs/:id", getOneBlog);
 app.get("/api/blogs/:id/related", getRelatedBlogs);

@@ -71,14 +71,6 @@ export default function Sidebar({ isOpen, onClose }) {
                         <Link to="/collaborate" onClick={onClose} className="text-foreground hover:text-primary transition-colors flex items-center gap-4">
                             <LottieIcon url="/img/Writing.json" /> Write for us
                         </Link>
-                        <Link to="/admin" onClick={onClose} className="text-foreground hover:text-primary transition-colors flex items-center gap-4 mt-4 pt-4 border-t border-border border-dashed">
-                            <div className="w-10 h-10 flex items-center justify-center bg-primary/10 rounded-full text-primary">
-                                <Palette size={20} />
-                            </div>
-                            Admin Dashboard
-                        </Link>
-
-                        {/* Dark Mode Toggle for Mobile */}
                         <button
                             onClick={toggleDarkMode}
                             className="text-foreground hover:text-primary transition-colors flex items-center gap-4 mt-2"

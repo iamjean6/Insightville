@@ -57,7 +57,7 @@ export const createBlog = async (req, res) => {
     try {
         console.log("Create Blog Request Body:", req.body);
         console.log("Create Blog Request Files:", req.files ? Object.keys(req.files) : "No files");
-        const { title, excerpt, content, author, category, quote, featured, editorsPick, date, videoUrl } = req.body
+        const { title, excerpt, content, author, category, subcategory, quote, featured, editorsPick, breaking, date, videoUrl } = req.body
         const { file, authorImageFile, videoFile } = req.files || {}
 
         const fileName = "articles/" + v4()
@@ -119,9 +119,11 @@ export const createBlog = async (req, res) => {
             author,
             authorImage: finalAuthorImage,
             category,
+            subcategory: subcategory || "",
             quote,
             featured: featured === 'true' || featured === true,
             editorsPick: editorsPick === 'true' || editorsPick === true,
+            breaking: breaking === 'true' || breaking === true,
             date: date || new Date(),
             videoUrl: finalVideoUrl,
             videoKey: videoKey,
@@ -194,7 +196,7 @@ export const getViews = async (req, res) => {
 export const updateBlog = async (req, res) => {
     try {
         const { id } = req.params;
-        const { title, excerpt, content, author, category, quote, featured, editorsPick, date, videoUrl } = req.body;
+        const { title, excerpt, content, author, category, subcategory, quote, featured, editorsPick, breaking, date, videoUrl } = req.body;
         const files = req.files || {};
 
         const blog = await Blog.findById(id);
@@ -208,11 +210,13 @@ export const updateBlog = async (req, res) => {
             content,
             author,
             category,
+            subcategory: subcategory !== undefined ? subcategory : blog.subcategory,
             quote,
             date,
             videoUrl: videoUrl !== undefined ? videoUrl : blog.videoUrl,
             featured: featured !== undefined ? (featured === 'true' || featured === true) : blog.featured,
-            editorsPick: editorsPick !== undefined ? (editorsPick === 'true' || editorsPick === true) : blog.editorsPick
+            editorsPick: editorsPick !== undefined ? (editorsPick === 'true' || editorsPick === true) : blog.editorsPick,
+            breaking: breaking !== undefined ? (breaking === 'true' || breaking === true) : blog.breaking
         };
 
         if (files.file) {
@@ -311,6 +315,7 @@ export const updateBlogStatus = async (req, res) => {
         const updateData = {};
         if (featured !== undefined) updateData.featured = featured;
         if (editorsPick !== undefined) updateData.editorsPick = editorsPick;
+        if (breaking !== undefined) updateData.breaking = breaking;
 
         const updatedBlog = await Blog.findByIdAndUpdate(id, updateData, { new: true });
 
@@ -422,9 +427,14 @@ export const getLatestBlogs = async (req, res) => {
 }
 export const getBlogCategory = async (req, res) => {
     try {
-        const { category } = req.params
-        const blogs = await Blog.find({ category: category })
-        return res.status(200).json({ success: true, data: blogs })
+        const { category } = req.params;
+        const { subcategory } = req.query;
+        let query = { category: category };
+        if (subcategory) {
+            query.subcategory = subcategory;
+        }
+        const blogs = await Blog.find(query);
+        return res.status(200).json({ success: true, data: blogs });
     } catch (err) {
         console.error("Error fetching blogs by category:", err);
         return res.status(500).json({ success: false, message: err.message })
@@ -438,5 +448,15 @@ export const getMedia = async (req, res) => {
     } catch (err) {
         console.error("Error fetching media:", err);
         res.status(500).json({ success: false, message: err.message });
+    }
+}
+
+export const getBreakingBlogs = async (req, res) => {
+    try {
+        const blogs = await Blog.find({ breaking: true }).sort({ date: -1 });
+        return res.status(200).json({ success: true, data: blogs });
+    } catch (err) {
+        console.error("Error fetching breaking blogs:", err);
+        return res.status(500).json({ success: false, message: err.message });
     }
 }

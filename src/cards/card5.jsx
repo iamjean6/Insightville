@@ -3,7 +3,7 @@ import { Pencil, Folder, MessageCircle, Calendar } from "lucide-react";
 
 const Card5 = ({ article }) => {
   return (
-    <div className="bg-card border border-border relative rounded-2xl flex flex-col group overflow-hidden hover:shadow-xl transition-all duration-300 h-full">
+    <div className="bg-card  relative  flex flex-col group overflow-hidden h-full">
       <Link to={`/article/${article._id || article.id}`} className="relative w-full h-72 lg:h-80 overflow-hidden shrink-0 block">
         <img
           src={article.image}

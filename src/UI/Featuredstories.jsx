@@ -21,7 +21,7 @@ const ArticleCard = ({ article }) => {
 export default function Featuredstories() {
     const [posts, setPosts] = useState([]);
     const [filteredPosts, setFilteredPosts] = useState([]);
-    const { selectedCategory } = useCategory();
+    const { selectedCategory, selectedSubcategory } = useCategory();
     const [currentPage, setCurrentPage] = useState(1);
     const [postsPerPage, setPostsPerPage] = useState(6);
     const [loading, setLoading] = useState(true);
@@ -49,13 +49,16 @@ export default function Featuredstories() {
     }, []);
 
     useEffect(() => {
-        if (selectedCategory === "All") {
-            setFilteredPosts(posts);
-        } else {
-            setFilteredPosts(posts.filter(post => post.category === selectedCategory));
+        let filtered = posts;
+        if (selectedCategory !== "All") {
+            filtered = filtered.filter(post => post.category === selectedCategory);
+            if (selectedSubcategory) {
+                filtered = filtered.filter(post => post.subcategory === selectedSubcategory);
+            }
         }
+        setFilteredPosts(filtered);
         setCurrentPage(1); // Reset to first page on filter change
-    }, [selectedCategory, posts]);
+    }, [selectedCategory, selectedSubcategory, posts]);
 
     const lastPostIndex = currentPage * postsPerPage;
     const firstPostIndex = lastPostIndex - postsPerPage;

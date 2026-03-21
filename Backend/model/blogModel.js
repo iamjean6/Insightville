@@ -27,6 +27,10 @@ const BlogSchema = new mongoose.Schema({
         type: String,
         required: [true, "Category is required"]
     },
+    subcategory: {
+        type: String,
+        default: ""
+    },
     quote: {
         type: String,
     },
@@ -58,6 +62,10 @@ const BlogSchema = new mongoose.Schema({
     },
     videoKey: {
         type: String,
+    },
+    breaking: {
+        type: Boolean,
+        default: false
     }
 })
 

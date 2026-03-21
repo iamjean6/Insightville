@@ -1,7 +1,4 @@
 import axios from "axios"
-
-// In production, Nginx proxies /api requests to the backend.
-// In local dev, Vite uses the VITE_API_URL from .env or defaults to localhost.
 const API_URL = import.meta.env.VITE_API_URL || "/api";
 
 const getAuthHeader = () => {
@@ -99,12 +96,20 @@ export const getLatestBlogs = async () => {
     return response.data;
 }
 
-export const getBlogsByCategory = async (category) => {
-    const response = await axios.get(`${API_URL}/blogs/category/${category}`);
+export const getBlogsByCategory = async (category, subcategory = "") => {
+    const url = subcategory 
+        ? `${API_URL}/blogs/category/${category}?subcategory=${subcategory}`
+        : `${API_URL}/blogs/category/${category}`;
+    const response = await axios.get(url);
     return response.data;
 }
 
 export const getMedia = async () => {
     const response = await axios.get(`${API_URL}/media`, getAuthHeader());
     return response.data;
-}
+}
+
+export const getBreakingBlogs = async () => {
+    const response = await axios.get(`${API_URL}/blogs/breaking`);
+    return response.data;
+}

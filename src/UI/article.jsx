@@ -14,6 +14,7 @@ import {
 import { Play, Pause, MailCheckIcon, Tag, ThumbsUpIcon, Share2, Clipboard, MessageCircle, Send, Volume2 } from "lucide-react";
 import Overlay from "../cards/overlay";
 import Button from "./button";
+import { enqueueSnackbar } from "notistack";
 
 
 export default function Article() {
@@ -107,6 +108,35 @@ export default function Article() {
             setIsLiked(!isLiked);
             setLikes(prev => isLiked ? prev - 1 : prev + 1);
         }
+    };
+
+    const handleShare = (platform) => {
+        const url = encodeURIComponent(window.location.href);
+        const text = encodeURIComponent(article.title);
+
+        let shareUrl = "";
+        switch (platform) {
+            case "facebook":
+                shareUrl = `https://www.facebook.com/sharer/sharer.php?u=${url}`;
+                break;
+            case "twitter":
+                shareUrl = `https://twitter.com/intent/tweet?url=${url}&text=${text}`;
+                break;
+            case "linkedin":
+                shareUrl = `https://www.linkedin.com/sharing/share-offsite/?url=${url}`;
+                break;
+            case "whatsapp":
+                shareUrl = `https://api.whatsapp.com/send?text=${text}%20${url}`;
+                break;
+            case "copy":
+                navigator.clipboard.writeText(window.location.href);
+                // You could add a toast here
+                enqueueSnackbar("Link copied to clipboard!", { variant: "success" });
+                return;
+            default:
+                return;
+        }
+        window.open(shareUrl, "_blank", "width=600,height=400");
     };
 
     const handleCommentSubmit = async (e) => {
@@ -280,7 +310,7 @@ export default function Article() {
                                 <div className="flex items-center justify-between flex-wrap gap-4">
                                     <div className="flex items-center gap-4">
                                         <img
-                                            src={article.authorImage || "https://images.unsplash.com/photo-1472099645785-5658abf4ff4e?q=80&w=100&auto=format&fit=crop"}
+                                            src={article.authorImage || "/img/picture.avif"}
                                             alt={article.author}
                                             className="w-14 h-14 rounded-full object-cover ring-4 ring-card"
                                         />
@@ -301,7 +331,10 @@ export default function Article() {
                                             <ThumbsUpIcon size={18} fill={isLiked ? "currentColor" : "none"} />
                                             {likes}
                                         </button>
-                                        <button className="p-2.5 rounded-full bg-card text-muted-foreground hover:bg-muted transition-all shadow-sm">
+                                        <button
+                                            onClick={() => handleShare('copy')}
+                                            className="p-2.5 rounded-full bg-card text-muted-foreground hover:bg-muted transition-all shadow-sm"
+                                        >
                                             <Share2 size={18} />
                                         </button>
                                     </div>
@@ -330,19 +363,44 @@ export default function Article() {
                                 </div>
 
                                 <div className="flex gap-4 items-center grayscale hover:grayscale-0 transition-all">
-                                    <img src="/img/facebook.svg" alt="" className="w-6 h-6 cursor-pointer hover:scale-110 transition-transform" />
-                                    <img src="/img/twitter.svg" alt="" className="w-6 h-6 cursor-pointer hover:scale-110 transition-transform" />
-                                    <img src="/img/ig.svg" alt="" className="w-6 h-6 cursor-pointer hover:scale-110 transition-transform" />
-                                    <img src="/img/linkedin.svg" alt="" className="w-6 h-6 cursor-pointer hover:scale-110 transition-transform" />
+                                    <img src="/img/facebook.svg" onClick={() => handleShare('facebook')} alt="Share on Facebook" className="w-6 h-6 cursor-pointer hover:scale-110 transition-transform" title="Share on Facebook" />
+                                    <img src="/img/twitter.svg" onClick={() => handleShare('twitter')} alt="Share on X" className="w-6 h-6 cursor-pointer hover:scale-110 transition-transform" title="Share on X" />
+                                    <img src="/img/linkedin.svg" onClick={() => handleShare('linkedin')} alt="Share on LinkedIn" className="w-6 h-6 cursor-pointer hover:scale-110 transition-transform" title="Share on LinkedIn" />
+                                    <img src="/img/whatsapp.svg" onClick={() => handleShare('whatsapp')} alt="Share on WhatsApp" className="w-6 h-6 cursor-pointer hover:scale-110 transition-transform" title="Share on WhatsApp" />
                                 </div>
 
                             </div>
-                            {/* article body */}
+
                             <p className="text-lg md:text-2xl leading-relaxed text-foreground/90 max-w-prose font-blogger">
                                 {article.content}
                             </p>
+                            {article.videoUrl && (
+                                <div className="w-full mt-10 rounded-2xl overflow-hidden shadow-2xl border border-border group relative">
+                                    {article.videoUrl.includes('youtube.com') || article.videoUrl.includes('youtu.be') || article.videoUrl.includes('vimeo.com') ? (
+                                        <div className="aspect-video w-full">
+                                            <iframe
+                                                src={article.videoUrl.includes('youtube.com') || article.videoUrl.includes('youtu.be')
+                                                    ? `https://www.youtube.com/embed/${article.videoUrl.split('v=')[1]?.split('&')[0] || article.videoUrl.split('/').pop()}`
+                                                    : `https://player.vimeo.com/video/${article.videoUrl.split('/').pop()}`
+                                                }
+                                                className="w-full h-full border-0"
+                                                allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
+                                                allowFullScreen
+                                                title="Article video"
+                                            ></iframe>
+                                        </div>
+                                    ) : (
+                                        <video
+                                            src={article.videoUrl}
+                                            controls
+                                            className="w-full h-auto"
+                                        >
+                                            Your browser does not support the video tag.
+                                        </video>
+                                    )}
+                                </div>
+                            )}
 
-                            {/* quote */}
                             {article.quote && (
                                 <div className="bg-card border-l-8 border-primary p-10 rounded-2xl shadow-inner relative overflow-hidden group">
                                     <div className="absolute top-4 right-8 text-primary/20 group-hover:text-primary transition-colors">

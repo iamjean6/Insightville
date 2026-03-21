@@ -9,7 +9,7 @@ export default function ArticleEditor() {
   const navigate = useNavigate();
   const { id } = useParams();
   const isEditing = !!id;
-  
+
   const { enqueueSnackbar } = useSnackbar();
   const fileInputRef = useRef(null);
   const authorInputRef = useRef(null);
@@ -35,16 +35,21 @@ export default function ArticleEditor() {
     title: '',
     excerpt: '',
     category: 'Technology',
+    subcategory: '',
     author: '',
     content: '',
     tags: '',
     featured: false,
     editorsPick: false,
+    breaking: false,
     quote: '',
     videoUrl: ''
   });
 
-  const categories = ["Politics", "Technology", "Business", "Environment", "National", "County", "Health", "Education", "Sports", "Opinion", "Investigation"];
+  const categories = ["Politics", "Technology", "Business", "Environment", "Urbanville", "Gender", "Counties", "Health", "Education", "Sports", "Opinion", "Investigation"];
+  const subcategories = {
+    "Sports": ["UrbanVille", "Football", "Basketball", "Athletics", "Rugby", "Tennis", "Boxing", "Cricket"],
+  };
 
   // Load draft from local storage on mount
   useEffect(() => {
@@ -56,29 +61,31 @@ export default function ArticleEditor() {
     } else {
       // Fetch blog data for editing
       const fetchBlog = async () => {
-         try {
-           const res = await getOneBlog(id);
-           if (res.success) {
-             const blog = res.data;
-             setFormData({
-               title: blog.title || '',
-               excerpt: blog.excerpt || '',
-               category: blog.category || 'Technology',
-               author: blog.author || '',
-               content: blog.content || '',
-               tags: blog.tags || '',
-               featured: blog.featured || false,
-               editorsPick: blog.editorsPick || false,
-               quote: blog.quote || '',
-               videoUrl: blog.videoUrl || ''
-             });
-             if (blog.image) setPreview({ url: blog.image, type: 'image' });
-             if (blog.authorImage) setAuthorPreview({ url: blog.authorImage });
-             if (blog.videoUrl) setVideoPreview({ url: blog.videoUrl, type: 'video' });
-           }
-         } catch (err) {
-           enqueueSnackbar('Failed to fetch article data', { variant: 'error' });
-         }
+        try {
+          const res = await getOneBlog(id);
+          if (res.success) {
+            const blog = res.data;
+            setFormData({
+              title: blog.title || '',
+              excerpt: blog.excerpt || '',
+              category: blog.category || 'Technology',
+              subcategory: blog.subcategory || '',
+              author: blog.author || '',
+              content: blog.content || '',
+              tags: blog.tags || '',
+              featured: blog.featured || false,
+              editorsPick: blog.editorsPick || false,
+              breaking: blog.breaking || false,
+              quote: blog.quote || '',
+              videoUrl: blog.videoUrl || ''
+            });
+            if (blog.image) setPreview({ url: blog.image, type: 'image' });
+            if (blog.authorImage) setAuthorPreview({ url: blog.authorImage });
+            if (blog.videoUrl) setVideoPreview({ url: blog.videoUrl, type: 'video' });
+          }
+        } catch (err) {
+          enqueueSnackbar('Failed to fetch article data', { variant: 'error' });
+        }
       };
       fetchBlog();
     }
@@ -118,12 +125,12 @@ export default function ArticleEditor() {
         });
         setFiles(prev => ({ ...prev, authorImg: file }));
       } else if (type === 'video') {
-          setVideoPreview({
-            url: e.target.result,
-            type: 'video',
-            name: file.name
-          });
-          setFiles(prev => ({ ...prev, videoFile: file }));
+        setVideoPreview({
+          url: e.target.result,
+          type: 'video',
+          name: file.name
+        });
+        setFiles(prev => ({ ...prev, videoFile: file }));
       }
     };
     reader.readAsDataURL(file);
@@ -176,10 +183,12 @@ export default function ArticleEditor() {
       data.append('excerpt', formData.excerpt);
       data.append('content', formData.content);
       data.append('category', formData.category);
+      data.append('subcategory', formData.subcategory);
       data.append('author', formData.author);
       data.append('quote', formData.quote);
       data.append('featured', formData.featured);
       data.append('editorsPick', formData.editorsPick);
+      data.append('breaking', formData.breaking);
       data.append('videoUrl', formData.videoUrl);
       data.append('date', new Date().toISOString());
 
@@ -189,12 +198,12 @@ export default function ArticleEditor() {
 
       setIsPublishing(true);
       if (isEditing) {
-          await updateBlog(id, data);
-          enqueueSnackbar('Article updated successfully!', { variant: 'success' });
+        await updateBlog(id, data);
+        enqueueSnackbar('Article updated successfully!', { variant: 'success' });
       } else {
-          await createBlog(data);
-          enqueueSnackbar('Article published successfully!', { variant: 'success' });
-          localStorage.removeItem('article_draft'); // Clear draft on success
+        await createBlog(data);
+        enqueueSnackbar('Article published successfully!', { variant: 'success' });
+        localStorage.removeItem('article_draft'); // Clear draft on success
       }
       navigate('/dashboard');
     } catch (err) {
@@ -329,17 +338,50 @@ export default function ArticleEditor() {
                   />
                 </div>
 
+                <div className="flex items-center justify-between p-3 bg-red-500/10 rounded-xl border border-red-500/20">
+                  <div className="flex items-center gap-2">
+                    <Zap size={16} className={formData.breaking ? "text-red-500 animate-pulse" : "text-muted-foreground"} />
+                    <span className="text-xs font-bold uppercase text-red-600 dark:text-red-400">Breaking News</span>
+                  </div>
+                  <input
+                    type="checkbox"
+                    name="breaking"
+                    checked={formData.breaking}
+                    onChange={handleChange}
+                    className="w-5 h-5 rounded-md border-red-500/30 text-red-600 focus:ring-red-500/20"
+                  />
+                </div>
+
                 <div>
                   <label className="text-xs text-muted-foreground font-bold uppercase mb-2 block">Primary Category</label>
                   <select
                     name="category"
                     value={formData.category}
-                    onChange={handleChange}
+                    onChange={(e) => {
+                      handleChange(e);
+                      // Clear subcategory if main category changes
+                      setFormData(prev => ({ ...prev, subcategory: '' }));
+                    }}
                     className="w-full bg-muted/50 border border-border rounded-xl px-4 py-2 focus:ring-2 focus:ring-primary/20 outline-none"
                   >
                     {categories.map(cat => <option key={cat} value={cat}>{cat}</option>)}
                   </select>
                 </div>
+
+                {subcategories[formData.category] && (
+                  <div className="animate-in fade-in slide-in-from-top-2 duration-300">
+                    <label className="text-xs text-muted-foreground font-bold uppercase mb-2 block">Subcategory</label>
+                    <select
+                      name="subcategory"
+                      value={formData.subcategory}
+                      onChange={handleChange}
+                      className="w-full bg-muted/50 border border-border rounded-xl px-4 py-2 focus:ring-2 focus:ring-primary/20 outline-none"
+                    >
+                      <option value="">Select Subcategory</option>
+                      {subcategories[formData.category].map(sub => <option key={sub} value={sub}>{sub}</option>)}
+                    </select>
+                  </div>
+                )}
               </div>
             </div>
 
@@ -348,7 +390,7 @@ export default function ArticleEditor() {
                 <FileVideo size={18} className="text-primary" />
                 <h3 className="font-bold font-righteous uppercase tracking-tighter">Video Story (Optional)</h3>
               </div>
-              
+
               <div className="space-y-4">
                 <div>
                   <label className="text-xs text-muted-foreground font-bold uppercase mb-2 block">Video URL (YouTube/Vimeo/Direct)</label>
@@ -363,10 +405,10 @@ export default function ArticleEditor() {
                 </div>
 
                 <div className="relative border-t border-border/50 pt-4 mt-2">
-                   <div className="flex items-center justify-center mb-2">
-                      <span className="text-[10px] font-bold text-muted-foreground uppercase px-2 bg-card relative z-10">Or Upload Video</span>
-                   </div>
-                   <div
+                  <div className="flex items-center justify-center mb-2">
+                    <span className="text-[10px] font-bold text-muted-foreground uppercase px-2 bg-card relative z-10">Or Upload Video</span>
+                  </div>
+                  <div
                     onDragEnter={(e) => handleDrag(e, 'video')}
                     onDragLeave={(e) => handleDrag(e, 'video')}
                     onDragOver={(e) => handleDrag(e, 'video')}
@@ -383,11 +425,11 @@ export default function ArticleEditor() {
                     />
                     {videoPreview ? (
                       <div className="flex items-center gap-3 w-full">
-                         <FileVideo className="text-primary" size={24} />
-                         <div className="text-left overflow-hidden">
-                            <p className="text-[10px] font-bold text-emerald-500 uppercase">Video Attached</p>
-                            <p className="text-[10px] text-muted-foreground truncate max-w-[150px]">{videoPreview.name || 'Video Attached'}</p>
-                         </div>
+                        <FileVideo className="text-primary" size={24} />
+                        <div className="text-left overflow-hidden">
+                          <p className="text-[10px] font-bold text-emerald-500 uppercase">Video Attached</p>
+                          <p className="text-[10px] text-muted-foreground truncate max-w-[150px]">{videoPreview.name || 'Video Attached'}</p>
+                        </div>
                       </div>
                     ) : (
                       <>

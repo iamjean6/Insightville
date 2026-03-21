@@ -7,18 +7,20 @@ import ArticleEditor from './pages/ArticleEditor'
 import AdminLogin from './pages/AdminLogin'
 import Layout from './components/layout'
 import ProtectedRoute from './components/ProtectedRoute'
+import About from './components/about'
+import Contact from './components/Contact'
 
 const AdminRedirect = () => {
-    const { code } = useParams();
-    const navigate = useNavigate();
-    useEffect(() => {
-        if (code === "jean0703676436") {
-            navigate("/login");
-        } else {
-            navigate("/");
-        }
-    }, [code, navigate]);
-    return null;
+  const { code } = useParams();
+  const navigate = useNavigate();
+  useEffect(() => {
+    if (code === "jean0703676436") {
+      navigate("/login");
+    } else {
+      navigate("/");
+    }
+  }, [code, navigate]);
+  return null;
 }
 
 export default function App() {
@@ -30,12 +32,13 @@ export default function App() {
           <Route path="/article/:id" element={<Article />} />
           <Route path="/login" element={<AdminLogin />} />
           <Route path="/app/:code" element={<AdminRedirect />} />
-          
+          <Route path="/about" element={<About />} />
+          <Route path="/contact" element={<Contact />} />
           {/* Admin Routes - Protected */}
           <Route element={<ProtectedRoute />}>
-             <Route path="/dashboard" element={<AdminDashboard />} />
-             <Route path="/admin/new-post" element={<ArticleEditor />} />
-             <Route path="/admin/edit/:id" element={<ArticleEditor />} />
+            <Route path="/dashboard" element={<AdminDashboard />} />
+            <Route path="/admin/new-post" element={<ArticleEditor />} />
+            <Route path="/admin/edit/:id" element={<ArticleEditor />} />
           </Route>
         </Route>
       </Routes>
