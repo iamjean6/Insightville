@@ -65,7 +65,7 @@ export default function Sidebar({ isOpen, onClose }) {
                         <Link to="/about" onClick={onClose} className="text-foreground hover:text-primary transition-colors flex items-center gap-4">
                             <LottieIcon url="/img/About _us.json" /> About Us
                         </Link>
-                        <Link to="/features" onClick={onClose} className="text-foreground hover:text-primary transition-colors flex items-center gap-4">
+                        <Link to="/contact" onClick={onClose} className="text-foreground hover:text-primary transition-colors flex items-center gap-4">
                             <LottieIcon url="/img/iPhone.json" /> Contact
                         </Link>
                         <Link to="/collaborate" onClick={onClose} className="text-foreground hover:text-primary transition-colors flex items-center gap-4">
