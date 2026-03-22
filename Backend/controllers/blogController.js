@@ -41,10 +41,14 @@ export const getOneBlog = async (req, res) => {
             return res.status(404).json({ success: false, message: "Blog not found" });
         }
         // Get S3 object if needed, but don't let it block the response if it fails
-        try {
-            await getObject(blog.key);
-        } catch (s3err) {
-            console.warn("S3 getObject failed for key:", blog.key, s3err.message);
+        if (blog.key) {
+            try {
+                await getObject(blog.key);
+            } catch (s3err) {
+                console.warn("S3 getObject failed for key:", blog.key, s3err.message);
+            }
+        } else {
+            console.log("No S3 key associated with this blog. Skipping S3 fetch.");
         }
 
         await cache.saveBlogDetail(id, blog);
