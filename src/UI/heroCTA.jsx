@@ -1,14 +1,16 @@
 import { Search, ArrowRight } from "lucide-react";
-import { getPopularBlogs } from "../../services/api";
+import { getPopularCategories } from "../../services/api";
 import { useState, useEffect } from "react";
-import { Link } from "react-router-dom";
+import { Link, useNavigate } from "react-router-dom";
 
 export default function HeroCTA() {
+    const navigate = useNavigate();
+    const [searchQuery, setSearchQuery] = useState("");
     const [popularBlogs, setPopularBlogs] = useState([]);
     useEffect(() => {
         const fetchPopularBlogs = async () => {
             try {
-                const res = await getPopularBlogs();
+                const res = await getPopularCategories();
                 if (res.success) {
                     setPopularBlogs(res.data);
                 }
@@ -18,6 +20,21 @@ export default function HeroCTA() {
         };
         fetchPopularBlogs();
     }, []);
+
+    const handleSearch = (e) => {
+        if (e) e.preventDefault();
+        
+        const trimmed = searchQuery.trim();
+        if (!trimmed) return;
+        
+        // Anti-injection: strip basic html/script tags
+        const sanitized = trimmed.replace(/<[^>]*>?/gm, '');
+        
+        if (sanitized) {
+            navigate(`/search?q=${encodeURIComponent(sanitized)}`);
+        }
+    };
+
     return (
         <div className="w-full relative overflow-hidden py-20 lg:py-32 flex flex-col items-center justify-center text-center px-4 transition-colors duration-300">
 
@@ -34,19 +51,21 @@ export default function HeroCTA() {
                 </p>
 
                 {/* Search Bar */}
-                <div className="w-full max-w-lg mb-8 relative group">
+                <form onSubmit={handleSearch} className="w-full max-w-lg mb-8 relative group">
                     <div className="absolute inset-y-0 left-0 pl-4 flex items-center pointer-events-none">
                         <Search className="text-muted-foreground group-focus-within:text-primary transition-colors" size={20} />
                     </div>
                     <input
                         type="text"
+                        value={searchQuery}
+                        onChange={(e) => setSearchQuery(e.target.value)}
                         placeholder="Search for articles, trends, or topics..."
                         className="w-full bg-card border-2 border-border text-foreground placeholder-muted-foreground rounded-full py-4 pl-12 pr-32 focus:outline-none focus:border-primary focus:ring-1 focus:ring-primary transition-all font-vend text-lg shadow-inner"
                     />
-                    <button className="absolute inset-y-2 right-2 bg-primary hover:bg-primary/90 text-primary-foreground font-righteous uppercase text-sm tracking-wider px-6 rounded-full transition-colors flex items-center gap-2 shadow-lg shadow-primary/30">
+                    <button type="submit" className="absolute inset-y-2 right-2 bg-primary hover:bg-primary/90 text-primary-foreground font-righteous uppercase text-sm tracking-wider px-6 rounded-full transition-colors flex items-center gap-2 shadow-lg shadow-primary/30">
                         Search
                     </button>
-                </div>
+                </form>
 
                 <div className="flex gap-4 items-center text-sm font-vend text-muted-foreground">
                     <span>Popular:</span>

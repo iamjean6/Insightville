@@ -6,6 +6,7 @@ import { getObject } from "../utils/getObject.js";
 import { deleteObject } from "../utils/deleteObject.js";
 import cache from "../cache/cache.js";
 import mongoose from "mongoose";
+import sharp from "sharp";
 
 export const getBlogs = async (req, res) => {
     try {
@@ -14,7 +15,11 @@ export const getBlogs = async (req, res) => {
             console.log("Blogs fetched from cache");
             return res.status(200).json({ success: true, data: cachedBlogs });
         }
-        const blogs = await Blog.find().sort({ date: -1 });
+        const page = parseInt(req.query.page) || 1;
+        const limit = parseInt(req.query.limit) || 0; // 0 means no limit by default to ensure frontend doesn't break
+        const skip = (page - 1) * limit;
+        
+        const blogs = await Blog.find().select('-content').sort({ date: -1 }).skip(skip).limit(limit);
         await cache.saveBlog(blogs);
         console.log("Blogs fetched from database and cached");
         return res.status(200).json({ success: true, data: blogs });
@@ -50,8 +55,7 @@ export const getOneBlog = async (req, res) => {
         return res.status(500).json({ success: false, message: err.message });
     }
 }
-import fs from 'fs';
-import path from 'path';
+
 
 export const createBlog = async (req, res) => {
     try {
@@ -87,14 +91,35 @@ export const createBlog = async (req, res) => {
             })
         }
 
-        const uploadResult = await putObject(file.data, fileName, file.mimetype);
+        // --- Phase 4: Asset Optimization (Image Processing) ---
+        let mainImageBuffer = file.data;
+        let mainImageMime = file.mimetype;
+        if (file.mimetype.startsWith('image/')) {
+            mainImageBuffer = await sharp(file.data)
+                .resize({ width: 1200, withoutEnlargement: true })
+                .webp({ quality: 80 })
+                .toBuffer();
+            mainImageMime = 'image/webp';
+        }
+
+        const uploadResult = await putObject(mainImageBuffer, fileName, mainImageMime);
         if (!uploadResult || !uploadResult.url) {
             throw new Error("Failed to upload cover image");
         }
 
         let finalAuthorImage = req.body.authorImage || "";
         if (authorImageFile) {
-            const authorUpload = await putObject(authorImageFile.data, authorImgName, authorImageFile.mimetype);
+            let authorBuffer = authorImageFile.data;
+            let authorMime = authorImageFile.mimetype;
+            if (authorImageFile.mimetype.startsWith('image/')) {
+                authorBuffer = await sharp(authorImageFile.data)
+                    .resize({ width: 400, height: 400, fit: 'cover' })
+                    .webp({ quality: 80 })
+                    .toBuffer();
+                authorMime = 'image/webp';
+            }
+            
+            const authorUpload = await putObject(authorBuffer, authorImgName, authorMime);
             if (authorUpload && authorUpload.url) {
                 finalAuthorImage = authorUpload.url;
             }
@@ -220,7 +245,16 @@ export const updateBlog = async (req, res) => {
         };
 
         if (files.file) {
-            const uploadedImage = await putObject(files.file.data, blog.key);
+            let updateBuffer = files.file.data;
+            let updateMime = files.file.mimetype;
+            if (files.file.mimetype && files.file.mimetype.startsWith('image/')) {
+                updateBuffer = await sharp(files.file.data)
+                    .resize({ width: 1200, withoutEnlargement: true })
+                    .webp({ quality: 80 })
+                    .toBuffer();
+                updateMime = 'image/webp';
+            }
+            const uploadedImage = await putObject(updateBuffer, blog.key, updateMime);
             if (uploadedImage && uploadedImage.url) {
                 updateData.image = uploadedImage.url;
             }
@@ -228,7 +262,16 @@ export const updateBlog = async (req, res) => {
 
         if (files.authorImageFile) {
             const authorImgName = "authors/" + v4();
-            const uploadedAuthorImage = await putObject(files.authorImageFile.data, authorImgName);
+            let authorBuffer = files.authorImageFile.data;
+            let authorMime = files.authorImageFile.mimetype;
+            if (files.authorImageFile.mimetype && files.authorImageFile.mimetype.startsWith('image/')) {
+                authorBuffer = await sharp(files.authorImageFile.data)
+                    .resize({ width: 400, height: 400, fit: 'cover' })
+                    .webp({ quality: 80 })
+                    .toBuffer();
+                authorMime = 'image/webp';
+            }
+            const uploadedAuthorImage = await putObject(authorBuffer, authorImgName, authorMime);
             if (uploadedAuthorImage && uploadedAuthorImage.url) {
                 updateData.authorImage = uploadedAuthorImage.url;
             }
@@ -329,7 +372,7 @@ export const updateBlogStatus = async (req, res) => {
 
 export const getAllComments = async (req, res) => {
     try {
-        const comments = await Comment.find().populate("blogId", "title");
+        const comments = await Comment.find().populate("blogId", "title").sort({ _id: -1 }).limit(50);
         return res.status(200).json({ success: true, data: comments });
     } catch (err) {
         console.error("Error fetching all comments:", err);
@@ -382,8 +425,27 @@ export const postComment = async (req, res) => {
 export const getPopularBlogs = async (req, res) => {
     try {
         console.log("Fetching popular blogs...");
-        // Fetch top 5 blogs sorted by views and likes descending
-        const blogs = await Blog.find().sort({ views: -1, likes: -1 }).limit(5);
+        const { distinctCategory } = req.query;
+        let blogs;
+
+        if (distinctCategory === 'true') {
+            blogs = await Blog.aggregate([
+                { $sort: { views: -1, likes: -1 } },
+                {
+                    $group: {
+                        _id: "$category",
+                        doc: { $first: "$$ROOT" }
+                    }
+                },
+                { $replaceRoot: { newRoot: "$doc" } },
+                { $sort: { views: -1, likes: -1 } },
+                { $limit: 5 },
+                { $project: { content: 0 } }
+            ]);
+        } else {
+            blogs = await Blog.find().select('-content').sort({ views: -1, likes: -1 }).limit(5);
+        }
+
         console.log(`Found ${blogs.length} popular blogs`);
         return res.status(200).json({ success: true, data: blogs });
     } catch (err) {
@@ -406,7 +468,7 @@ export const getRelatedBlogs = async (req, res) => {
         const relatedBlogs = await Blog.find({
             category: currentBlog.category,
             _id: { $ne: id }
-        }).limit(4);
+        }).select('-content').limit(4);
 
         console.log(`Found ${relatedBlogs.length} related blogs`);
         return res.status(200).json({ success: true, data: relatedBlogs });
@@ -418,7 +480,7 @@ export const getRelatedBlogs = async (req, res) => {
 
 export const getLatestBlogs = async (req, res) => {
     try {
-        const blogs = await Blog.find().sort({ date: -1 })
+        const blogs = await Blog.find().select('-content').sort({ date: -1 }).limit(10);
         return res.status(200).json({ success: true, data: blogs })
     } catch (err) {
         console.error("Error fetching latest blogs:", err);
@@ -433,7 +495,11 @@ export const getBlogCategory = async (req, res) => {
         if (subcategory) {
             query.subcategory = subcategory;
         }
-        const blogs = await Blog.find(query);
+        const page = parseInt(req.query.page) || 1;
+        const limit = parseInt(req.query.limit) || 0;
+        const skip = (page - 1) * limit;
+
+        const blogs = await Blog.find(query).select('-content').sort({ date: -1 }).skip(skip).limit(limit);
         return res.status(200).json({ success: true, data: blogs });
     } catch (err) {
         console.error("Error fetching blogs by category:", err);
@@ -453,7 +519,7 @@ export const getMedia = async (req, res) => {
 
 export const getBreakingBlogs = async (req, res) => {
     try {
-        const blogs = await Blog.find({ breaking: true }).sort({ date: -1 });
+        const blogs = await Blog.find({ breaking: true }).select('-content').sort({ date: -1 }).limit(10);
         return res.status(200).json({ success: true, data: blogs });
     } catch (err) {
         console.error("Error fetching breaking blogs:", err);

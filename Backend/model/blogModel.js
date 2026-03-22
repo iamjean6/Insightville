@@ -69,4 +69,11 @@ const BlogSchema = new mongoose.Schema({
     }
 })
 
+// Database Indexes for optimized querying
+BlogSchema.index({ date: -1 });
+BlogSchema.index({ category: 1 });
+BlogSchema.index({ breaking: 1 });
+BlogSchema.index({ views: -1 });
+BlogSchema.index({ likes: -1 });
+
 export default mongoose.model("Blog", BlogSchema);

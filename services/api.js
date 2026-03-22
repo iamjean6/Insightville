@@ -86,6 +86,11 @@ export const getPopularBlogs = async () => {
     return response.data;
 }
 
+export const getPopularCategories = async () => {
+    const response = await axios.get(`${API_URL}/blogs/popular?distinctCategory=true`);
+    return response.data;
+}
+
 export const getRelatedBlogs = async (id) => {
     const response = await axios.get(`${API_URL}/blogs/${id}/related`);
     return response.data;
