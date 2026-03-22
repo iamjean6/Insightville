@@ -4,11 +4,11 @@ import { Link } from "react-router-dom";
 const Standard = ({ article }) => {
     return (
         <div className="group flex flex-col bg-card border border-border rounded-2xl overflow-hidden shadow-sm hover:shadow-md transition-all duration-300 w-full h-full">
-            <Link to={`/article/${article._id || article.id}`} className="relative overflow-hidden w-full block">
+            <Link to={`/article/${article._id || article.id}`} className="relative overflow-hidden w-full aspect-video block bg-muted/20">
                 <img
                     src={article.image}
                     alt={article.title}
-                    className="w-full h-full object-cover hover:cursor-pointer group-hover:scale-[1.01] transition-transform duration-300"
+                    className="w-full h-full object-cover hover:cursor-pointer group-hover:scale-[1.01] transition-transform duration-300 text-transparent"
                 />
                 {/* Badge */}
                 <div className="absolute top-4 left-4 z-10">

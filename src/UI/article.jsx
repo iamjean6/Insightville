@@ -342,11 +342,11 @@ export default function Article() {
                             </div>
 
                             {/* featured image */}
-                            <div className="w-full relative group">
+                            <div className="w-full relative group aspect-[16/9] bg-muted/20 rounded-2xl block">
                                 <img
                                     src={article.image}
                                     alt={article.title}
-                                    className="w-full aspect-[16/9] object-cover rounded-2xl shadow-2xl"
+                                    className="w-full h-full object-cover rounded-2xl shadow-2xl text-transparent"
                                 />
                             </div>
 
