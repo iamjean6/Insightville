@@ -2,6 +2,7 @@ import dotenv from "dotenv";
 dotenv.config();
 import express from "express";
 import cors from "cors";
+import cookieParser from "cookie-parser";
 import fileUpload from "express-fileupload";
 import { rateLimit } from "express-rate-limit";
 import { 
@@ -23,7 +24,7 @@ import {
     getMedia,
     getBreakingBlogs
 } from "./controllers/blogController.js";
-import { login, register } from "./controllers/authController.js";
+import { login, register, refresh, logout } from "./controllers/authController.js";
 import { protect } from "./middleware/authMiddleware.js";
 import { streamTTS } from "./controllers/ttsController.js";
 import mongoose from "mongoose";
@@ -31,7 +32,11 @@ import mongoose from "mongoose";
 const app = express();
 
 // Middleware
-app.use(cors());
+app.use(cors({
+    origin: process.env.CLIENT_ORIGIN || "http://localhost:5173",
+    credentials: true,
+}));
+app.use(cookieParser());
 app.use(fileUpload({ limits: { fileSize: 50 * 1024 * 1024 }, useTempFiles: false, }));
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
@@ -65,6 +70,8 @@ app.get("/", (req, res) => {
 // Auth Routes
 app.post("/api/auth/login", login);
 app.post("/api/auth/register", register); // Initially open, can be protected later
+app.post("/api/auth/refresh", refresh);
+app.post("/api/auth/logout", logout);
 
 // Blog Routes
 app.get("/api/blogs", getBlogs);

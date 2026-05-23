@@ -12,17 +12,35 @@ const BlogSchema = new mongoose.Schema({
         type: String,
         required: [true, "Content is required"]
     },
-    image: {
+   image: {
+    webp: {
         type: String,
-        required: [true, "Please enter Image is required"]
+        required: true
     },
+    jpeg: {
+        type: String,
+        required: true
+    },
+    avif: {
+        type: String,
+        required: true
+    }
+},
     author: {
         type: String,
         required: [true, "Author is required"]
     },
-    authorImage: {
-        type: String,
+   authorImages: {
+    webp: {
+        type: String
     },
+    jpeg: {
+        type: String
+    },
+    avif: {
+        type: String
+    }
+},
     category: {
         type: String,
         required: [true, "Category is required"]

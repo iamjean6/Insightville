@@ -60,15 +60,33 @@ export const getOneBlog = async (req, res) => {
 export const createBlog = async (req, res) => {
     try {
         console.log("Create Blog Request Body:", req.body);
-        console.log("Create Blog Request Files:", req.files ? Object.keys(req.files) : "No files");
-        const { title, excerpt, content, author, category, subcategory, quote, featured, editorsPick, breaking, date, videoUrl } = req.body
-        const { file, authorImageFile, videoFile } = req.files || {}
+        console.log(
+            "Create Blog Request Files:",
+            req.files ? Object.keys(req.files) : "No files"
+        );
 
-        const fileName = "articles/" + v4()
-        const authorImgName = "authors/" + v4()
-        const videoFileName = videoFile ? "videos/" + v4() : null
+        const {
+            title,
+            excerpt,
+            content,
+            author,
+            category,
+            subcategory,
+            quote,
+            featured,
+            editorsPick,
+            breaking,
+            date,
+            videoUrl
+        } = req.body;
 
+        const { file, authorImageFile, videoFile } = req.files || {};
+
+        // -----------------------------
+        // Validation
+        // -----------------------------
         const missing = [];
+
         if (!title) missing.push("title");
         if (!excerpt) missing.push("excerpt");
         if (!content) missing.push("content");
@@ -77,95 +95,232 @@ export const createBlog = async (req, res) => {
         if (!date) missing.push("date");
 
         if (missing.length > 0) {
-            console.log("Missing fields detected:", missing);
             return res.status(400).json({
-                "status": "error",
-                "message": `Missing required fields: ${missing.join(", ")}`
-            })
+                status: "error",
+                message: `Missing required fields: ${missing.join(", ")}`
+            });
         }
 
         if (!file) {
             return res.status(400).json({
-                "status": "error",
-                "message": "Cover image is required"
-            })
+                status: "error",
+                message: "Cover image is required"
+            });
         }
 
-        // --- Phase 4: Asset Optimization (Image Processing) ---
-        let mainImageBuffer = file.data;
-        let mainImageMime = file.mimetype;
-        if (file.mimetype.startsWith('image/')) {
-            mainImageBuffer = await sharp(file.data)
-                .resize({ width: 1200, withoutEnlargement: true })
+        // -----------------------------
+        // Generate Shared IDs
+        // -----------------------------
+        const articleId = v4();
+        const authorId = v4();
+
+        // -----------------------------
+        // Article Image Keys
+        // -----------------------------
+        const articleWebpKey = `articles/${articleId}.webp`;
+        const articleJpegKey = `articles/${articleId}.jpg`;
+        const articleAvifKey = `articles/${articleId}.avif`;
+
+        // -----------------------------
+        // Author Image Keys
+        // -----------------------------
+        const authorWebpKey = `authors/${authorId}.webp`;
+        const authorJpegKey = `authors/${authorId}.jpg`;
+        const authorAvifKey = `authors/${authorId}.avif`;
+
+        // -----------------------------
+        // Process Main Image
+        // -----------------------------
+        let articleImages = {};
+
+        if (file.mimetype.startsWith("image/")) {
+
+            // WebP
+            const webpBuffer = await sharp(file.data)
+                .resize({
+                    width: 1200,
+                    withoutEnlargement: true
+                })
                 .webp({ quality: 80 })
                 .toBuffer();
-            mainImageMime = 'image/webp';
-        }
 
-        const uploadResult = await putObject(mainImageBuffer, fileName, mainImageMime);
-        if (!uploadResult || !uploadResult.url) {
-            throw new Error("Failed to upload cover image");
-        }
+            // JPEG
+            const jpegBuffer = await sharp(file.data)
+                .resize({
+                    width: 1200,
+                    withoutEnlargement: true
+                })
+                .jpeg({ quality: 80 })
+                .toBuffer();
 
-        let finalAuthorImage = req.body.authorImage || "";
-        if (authorImageFile) {
-            let authorBuffer = authorImageFile.data;
-            let authorMime = authorImageFile.mimetype;
-            if (authorImageFile.mimetype.startsWith('image/')) {
-                authorBuffer = await sharp(authorImageFile.data)
-                    .resize({ width: 400, height: 400, fit: 'cover' })
-                    .webp({ quality: 80 })
-                    .toBuffer();
-                authorMime = 'image/webp';
+            // AVIF
+            const avifBuffer = await sharp(file.data)
+                .resize({
+                    width: 1200,
+                    withoutEnlargement: true
+                })
+                .avif({ quality: 50 })
+                .toBuffer();
+
+            // Upload concurrently
+            const [
+                webpUpload,
+                jpegUpload,
+                avifUpload
+            ] = await Promise.all([
+                putObject(webpBuffer, articleWebpKey, "image/webp"),
+                putObject(jpegBuffer, articleJpegKey, "image/jpeg"),
+                putObject(avifBuffer, articleAvifKey, "image/avif")
+            ]);
+
+            if (!webpUpload?.url) {
+                throw new Error("Failed to upload WebP image");
             }
-            
-            const authorUpload = await putObject(authorBuffer, authorImgName, authorMime);
-            if (authorUpload && authorUpload.url) {
-                finalAuthorImage = authorUpload.url;
+
+            if (!jpegUpload?.url) {
+                throw new Error("Failed to upload JPEG image");
             }
+
+            if (!avifUpload?.url) {
+                throw new Error("Failed to upload AVIF image");
+            }
+
+            articleImages = {
+                webp: webpUpload.url,
+                jpeg: jpegUpload.url,
+                avif: avifUpload.url
+            };
         }
 
+        // -----------------------------
+        // Process Author Image
+        // -----------------------------
+        let authorImages = {};
+
+        if (
+            authorImageFile &&
+            authorImageFile.mimetype.startsWith("image/")
+        ) {
+
+            // WebP
+            const authorWebpBuffer = await sharp(authorImageFile.data)
+                .resize({
+                    width: 400,
+                    height: 400,
+                    fit: "cover"
+                })
+                .webp({ quality: 80 })
+                .toBuffer();
+
+            // JPEG
+            const authorJpegBuffer = await sharp(authorImageFile.data)
+                .resize({
+                    width: 400,
+                    height: 400,
+                    fit: "cover"
+                })
+                .jpeg({ quality: 80 })
+                .toBuffer();
+
+            // AVIF
+            const authorAvifBuffer = await sharp(authorImageFile.data)
+                .resize({
+                    width: 400,
+                    height: 400,
+                    fit: "cover"
+                })
+                .avif({ quality: 50 })
+                .toBuffer();
+
+            const [
+                authorWebpUpload,
+                authorJpegUpload,
+                authorAvifUpload
+            ] = await Promise.all([
+                putObject(authorWebpBuffer, authorWebpKey, "image/webp"),
+                putObject(authorJpegBuffer, authorJpegKey, "image/jpeg"),
+                putObject(authorAvifBuffer, authorAvifKey, "image/avif")
+            ]);
+
+            authorImages = {
+                webp: authorWebpUpload.url,
+                jpeg: authorJpegUpload.url,
+                avif: authorAvifUpload.url
+            };
+        }
+
+        // -----------------------------
+        // Video Upload
+        // -----------------------------
         let finalVideoUrl = videoUrl || null;
         let videoKey = null;
 
         if (videoFile) {
-            const videoUpload = await putObject(videoFile.data, videoFileName, videoFile.mimetype);
-            if (videoUpload && videoUpload.url) {
+
+            const videoFileName = `videos/${v4()}`;
+
+            const videoUpload = await putObject(
+                videoFile.data,
+                videoFileName,
+                videoFile.mimetype
+            );
+
+            if (videoUpload?.url) {
                 finalVideoUrl = videoUpload.url;
                 videoKey = videoUpload.key;
             }
         }
 
+        // -----------------------------
+        // Create Blog
+        // -----------------------------
         const blog = await Blog.create({
             title,
             excerpt,
             content,
-            image: uploadResult.url,
+
+            image: articleImages,
+
             author,
-            authorImage: finalAuthorImage,
+            authorImages,
+
             category,
             subcategory: subcategory || "",
+
             quote,
-            featured: featured === 'true' || featured === true,
-            editorsPick: editorsPick === 'true' || editorsPick === true,
-            breaking: breaking === 'true' || breaking === true,
+
+            featured:
+                featured === "true" || featured === true,
+
+            editorsPick:
+                editorsPick === "true" || editorsPick === true,
+
+            breaking:
+                breaking === "true" || breaking === true,
+
             date: date || new Date(),
+
             videoUrl: finalVideoUrl,
-            videoKey: videoKey,
-            key: uploadResult.key
+            videoKey
         });
 
         await cache.invalidateBlogCache();
 
         return res.status(201).json({
-            "status": "success",
-            "data": blog,
-        })
+            status: "success",
+            data: blog
+        });
+
     } catch (err) {
-        console.error('Error in createBlog:', err);
-        return res.status(500).json({ "status": "error", "message": err.message })
+
+        console.error("Error in createBlog:", err);
+
+        return res.status(500).json({
+            status: "error",
+            message: err.message
+        });
     }
-}
+};
 export const getComments = async (req, res) => {
     try {
         const { id } = req.params;
