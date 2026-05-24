@@ -34,7 +34,7 @@ export default function ArticleEditor() {
   const [formData, setFormData] = useState({
     title: '',
     excerpt: '',
-    category: 'Technology',
+    category: 'Basketball',
     subcategory: '',
     author: '',
     content: '',

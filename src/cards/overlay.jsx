@@ -1,11 +1,15 @@
 import { User, Calendar, Eye } from "lucide-react";
 import { Link } from "react-router-dom";
+import OptimizedImage from "../utils/OptimizedImage";
 
 const Overlay = ({ article }) => {
     return (
         <Link to={`/article/${article._id || article.id}`} className="group relative overflow-hidden rounded-2xl shadow-sm hover:shadow-md transition-shadow duration-300 w-full h-full block">
-            <img
-                src={article.image}
+           
+           <OptimizedImage
+                webpSrc={article.image.webp}
+                jpegSrc={article.image.jpeg}    
+                avifSrc={article.image.avif}
                 alt={article.title}
                 className="w-full h-full hover:cursor-pointer object-cover group-hover:scale-[1.01] transition-transform duration-300"
             />

@@ -2,24 +2,27 @@ import React, { useState, useEffect } from 'react';
 import { LayoutDashboard, FilePlus, MessageSquare, Eye, Heart, List, Settings, Trash2, Edit3, Search, Star, Zap, FileVideo, Image as ImageIcon } from 'lucide-react';
 import { Link, useNavigate } from 'react-router-dom';
 import { getBlogs, deleteBlog, updateBlogStatus, getMedia, logout } from '../../services/api';
-
+import OptimizedImage from '../utils/OptimizedImage';
+import { useSnackbar } from 'notistack';
 export default function AdminDashboard() {
   const [activeTab, setActiveTab] = useState('overview');
   const [posts, setPosts] = useState([]);
   const [comments, setComments] = useState([]);
   const [media, setMedia] = useState([]);
   const [loading, setLoading] = useState(true);
+  const [deleteBlogId, setDeleteBlogId] = useState(null);
   const [error, setError] = useState(null);
   const navigate = useNavigate();
 
+  const { enqueueSnackbar } = useSnackbar();
   useEffect(() => {
     fetchPosts();
     fetchComments();
     fetchMedia();
   }, []);
 
-  const handleLogout = () => {
-    logout();
+  const handleLogout = async () => {
+    await logout();
     navigate('/login');
   };
 
@@ -63,21 +66,37 @@ export default function AdminDashboard() {
     }
   };
 
-  const handleDelete = async (id) => {
-    if (confirm('Are you sure you want to delete this post?')) {
-      try {
-        const response = await deleteBlog(id);
-        if (response.status === 'success') {
-          setPosts(posts.filter(post => post._id !== id));
-        } else {
-          alert("Delete failed: " + (response.message || "Unknown error"));
-        }
-      } catch (err) {
-        const errorMsg = err.response?.data?.message || err.message || "An unknown error occurred";
-        alert("Delete failed: " + errorMsg);
-      }
+  const confirmDeleteBlog = async () => {
+  if (!deleteBlogId) return;
+
+  try {
+    const response = await deleteBlog(deleteBlogId);
+
+    if (response.status === "success") {
+
+      enqueueSnackbar("Blog deleted successfully", { variant: "success" });
+      // remove deleted post from UI
+      setPosts((prev) =>
+        prev.filter(post => post._id !== deleteBlogId)
+      );
+
+      // close modal
+      setDeleteBlogId(null);
+
+    } else {
+      enqueueSnackbar(response.message || "Delete failed");
     }
-  };
+
+  } catch (err) {
+
+    const errorMsg =
+      err.response?.data?.message ||
+      err.message ||
+      "Unknown error";
+
+    alert("Delete failed: " + errorMsg);
+  }
+};
 
   const handleToggleStatus = async (id, field, currentValue) => {
     try {
@@ -213,6 +232,13 @@ export default function AdminDashboard() {
                     <div key={post._id} className="flex items-center justify-between p-4 hover:bg-muted/50 rounded-2xl transition-colors border border-transparent hover:border-border">
                       <div className="flex items-center gap-4">
                         <div className="w-12 h-12 bg-muted rounded-lg overflow-hidden shrink-0">
+                          <OptimizedImage
+                            webpSrc={post.image?.webp || `https://picsum.photos/seed/${post._id}/200`}
+                            jpegSrc={post.image?.jpeg || `https://picsum.photos/seed/${post._id}/200`}     
+                            avifSrc={post.image?.avif || `https://picsum.photos/seed/${post._id}/200`}
+                            alt='thumb'
+                            className="w-full h-full object-cover opacity-80"
+                          />
                             <img src={post.image || `https://picsum.photos/seed/${post._id}/200`} alt="thumb" className="w-full h-full object-cover opacity-80" />
                         </div>
                         <div>
@@ -265,7 +291,13 @@ export default function AdminDashboard() {
                           <td className="py-4 pr-4">
                             <div className="flex items-center gap-3">
                               <div className="w-10 h-10 rounded bg-muted overflow-hidden shrink-0">
-                                <img src={post.image || `https://picsum.photos/seed/${post._id}/100`} className="w-full h-full object-cover" />
+                               <OptimizedImage
+                               webpSrc={post.image?.webp}
+                               jpegSrc={post.image?.jpeg}
+                               avifSrc={post.image?.avif}
+                               alt={post.title}
+                               className="w-full h-full object-cover"
+                               />
                               </div>
                               <span className="font-bold text-sm line-clamp-1">{post.title}</span>
                             </div>
@@ -304,7 +336,7 @@ export default function AdminDashboard() {
                                 <Edit3 size={18} />
                               </Link>
                               <button 
-                                onClick={() => handleDelete(post._id)}
+                                onClick={() => setDeleteBlogId(post._id)}
                                 className="p-2 hover:bg-destructive/10 hover:text-destructive rounded-lg transition-colors text-muted-foreground" 
                                 title="Delete"
                               >
@@ -319,7 +351,32 @@ export default function AdminDashboard() {
                 </div>
               </div>
             )}
-
+  {deleteBlogId && (
+                <div className="fixed inset-0 bg-black/80 backdrop-blur-sm z-[100] flex items-center justify-center p-4">
+                    <div className="glass bg-sidebar border border-red-500/30 p-6 rounded-2xl shadow-2xl max-w-sm w-full animate-in zoom-in-95 duration-200">
+                        <h3 className="text-lg font-bold text-black mb-2 flex items-center gap-2">
+                            <Trash2 className="text-red-500" size={20} /> Delete Blog
+                        </h3>
+                        <p className="text-sidebar-foreground/70 text-sm mb-6">
+                            Are you sure you want to permanently delete this blog? This action cannot be undone.
+                        </p>
+                        <div className="flex gap-3 justify-end">
+                            <button 
+                               onClick={() => setDeleteBlogId(null)}
+                                className="px-4 py-2 rounded-xl text-sm font-medium hover:bg-sidebar-accent transition-colors"
+                            >
+                                Cancel
+                            </button>
+                            <button 
+                                onClick={confirmDeleteBlog}
+                                className="px-4 py-2 bg-red-500/20 text-red-500 hover:bg-red-500 hover:text-white rounded-xl text-sm font-bold transition-colors"
+                            >
+                                Delete
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            )}
             {activeTab === 'media' && (
               <div className="space-y-6">
                 <div className="flex justify-between items-center mb-6">
@@ -335,7 +392,12 @@ export default function AdminDashboard() {
                   <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-4">
                     {media.map((item, idx) => (
                       <div key={idx} className="group relative bg-muted rounded-2xl overflow-hidden aspect-square border border-border shadow-sm hover:shadow-md transition-all">
-                          <img src={item.image} className="w-full h-full object-cover transition-transform group-hover:scale-110" alt={item.title} />
+                        <OptimizedImage
+                         webpSrc={item.image?.webp}
+                         jpegSrc={item.image?.jpeg}
+                         avifSrc={item.image?.avif}
+                          className="w-full h-full object-cover transition-transform group-hover:scale-110"
+                        />
                           <div className="absolute inset-0 bg-gradient-to-t from-black/90 via-black/20 to-transparent opacity-0 group-hover:opacity-100 transition-opacity p-4 flex flex-col justify-end">
                               <p className="text-white text-[10px] font-bold uppercase truncate mb-1">{item.title}</p>
                               <div className="flex gap-2">

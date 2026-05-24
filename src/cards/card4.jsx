@@ -1,5 +1,6 @@
 import { ArrowRight, Calendar, Heart } from "lucide-react";
 import { Link } from "react-router-dom";
+import OptimizedImage from "../utils/OptimizedImage";
 
 const BlogCard = ({ article }) => {
     return (
@@ -7,11 +8,15 @@ const BlogCard = ({ article }) => {
 
             {/* Top Image Section */}
             <div className="relative w-full h-56 shrink-0 rounded-t-3xl overflow-hidden">
-                <img
-                    src={article.image}
+               
+               <OptimizedImage
+                    webpSrc={article.image.webp}
+                    jpegSrc={article.image.jpeg}
+                    avifSrc={article.image.avif}
                     alt={article.title}
                     className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500"
                 />
+               
 
                 {/* Floating Button "Cut-out" Top Left */}
                 <div className="absolute top-0 left-0">

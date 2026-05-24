@@ -1,14 +1,16 @@
 import { Link } from "react-router-dom";
 import { Pencil, Folder, MessageCircle, Calendar } from "lucide-react";
-
+import OptimizedImage from "../utils/OptimizedImage";
 const Card5 = ({ article }) => {
   return (
     <div className="bg-card  relative  flex flex-col group overflow-hidden h-full">
       <Link to={`/article/${article._id || article.id}`} className="relative w-full h-72 lg:h-80 overflow-hidden shrink-0 block">
-        <img
-          src={article.image}
+        <OptimizedImage
+          webpSrc={article.image.webp}
+          jpegSrc={article.image.jpeg}
+          avifSrc={article.image.avif}
           alt={article.title}
-          className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-105"
+          className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500"
         />
 
         {article.isFeatured && (

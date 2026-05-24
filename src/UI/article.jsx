@@ -1,6 +1,7 @@
 import { useState, useEffect, useRef } from "react";
 import { useParams, Link } from "react-router-dom";
 import { mockArticles } from "../../constants/index";
+import OptimizedImage from "../utils/OptimizedImage";
 import {
     getOneBlog,
     likeBlog,
@@ -309,10 +310,12 @@ export default function Article() {
                                 {/* author */}
                                 <div className="flex items-center justify-between flex-wrap gap-4">
                                     <div className="flex items-center gap-4">
-                                        <img
-                                            src={article.authorImage || "/img/picture.avif"}
+                                        <OptimizedImage
+                                            webpSrc={article.authorImage?.webp || "/img/default-avatar.webp"}
+                                            jpegSrc={article.authorImage?.jpeg || "/img/default-avatar.jpeg"}
+                                            avifSrc={article.authorImage?.avif || "/img/default-avatar.avif"}
                                             alt={article.author}
-                                            className="w-14 h-14 rounded-full object-cover ring-4 ring-card"
+                                            className="w-12 h-12 rounded-full border border-border object-cover"
                                         />
                                         <div>
                                             <p className="text-foreground font-bold text-lg font-galantic">
@@ -343,8 +346,10 @@ export default function Article() {
 
                             {/* featured image */}
                             <div className="w-full relative group aspect-[16/9] bg-muted/20 rounded-2xl block">
-                                <img
-                                    src={article.image}
+                               <OptimizedImage
+                                    webpSrc={article.image.webp}
+                                    jpegSrc={article.image.jpeg}
+                                    avifSrc={article.image.avif}
                                     alt={article.title}
                                     className="w-full h-full object-cover rounded-2xl shadow-2xl text-transparent"
                                 />

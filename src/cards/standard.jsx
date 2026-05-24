@@ -1,15 +1,19 @@
 import { User, Calendar, Eye } from "lucide-react";
 import { Link } from "react-router-dom";
+import OptimizedImage from "../utils/OptimizedImage";
 
 const Standard = ({ article }) => {
     return (
         <div className="group flex flex-col bg-card border border-border rounded-2xl overflow-hidden shadow-sm hover:shadow-md transition-all duration-300 w-full h-full">
             <Link to={`/article/${article._id || article.id}`} className="relative overflow-hidden w-full aspect-video block bg-muted/20">
-                <img
-                    src={article.image}
-                    alt={article.title}
+                <OptimizedImage 
+                    webpSrc={article.image.webp}
+                    jpegSrc={article.image.jpeg}
+                    avifSrc={article.image.avif}    
+                        alt={article.title}
                     className="w-full h-full object-cover hover:cursor-pointer group-hover:scale-[1.01] transition-transform duration-300 text-transparent"
                 />
+                
                 {/* Badge */}
                 <div className="absolute top-4 left-4 z-10">
                     <span className="bg-background/80 backdrop-blur-sm text-primary font-righteous text-xs uppercase tracking-wider px-3 py-1 rounded-full border border-primary/30">

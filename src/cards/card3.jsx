@@ -1,5 +1,6 @@
 import { Share, Heart, Bookmark, Eye, MoreHorizontal } from "lucide-react";
 import { Link } from "react-router-dom";
+import OptimizedImage from "../utils/OptimizedImage";
 
 const Card3 = ({ article }) => {
     return (
@@ -7,8 +8,11 @@ const Card3 = ({ article }) => {
 
             {/* Image */}
             <div className="relative md:w-64 md:h-64 h-56 w-42 flex-shrink-0 overflow-hidden rounded-3xl">
-                <img
-                    src={article.image}
+               
+               <OptimizedImage
+                    webpSrc={article.image.webp}
+                    jpegSrc={article.image.jpeg}
+                    avifSrc={article.image.avif}
                     alt={article.title}
                     className="w-full h-full object-cover"
                 />
