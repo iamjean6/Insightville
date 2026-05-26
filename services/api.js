@@ -227,6 +227,13 @@ export const getMedia = async () => {
     return response.data;
 };
 
+export const uploadInlineMedia = async (file) => {
+  const formData = new FormData();
+  formData.append('inlineMedia', file);
+  const response = await api.post('/media/upload', formData);
+  return response.data;
+};
+
 export const streamTTS = async (text) => {
     const response = await api.post("/tts", { text }, { responseType: "blob" });
     return response.data;

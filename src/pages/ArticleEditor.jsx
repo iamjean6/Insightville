@@ -1,7 +1,7 @@
 import React, { useState, useRef } from 'react';
 import { Save, Image as ImageIcon, X, Send, Eye, Type, Tag, ChevronLeft, Upload, FileVideo, CheckCircle2, User, Zap, Star } from 'lucide-react';
 import { Link, useNavigate, useParams } from 'react-router-dom';
-import { createBlog, updateBlog, getOneBlog } from '../../services/api';
+import { createBlog, updateBlog, getOneBlog, uploadInlineMedia } from '../../services/api';
 import { useSnackbar } from 'notistack';
 import { useEffect } from 'react';
 
@@ -14,13 +14,16 @@ export default function ArticleEditor() {
   const fileInputRef = useRef(null);
   const authorInputRef = useRef(null);
   const videoInputRef = useRef(null);
+  const inlineImageRef = useRef(null)
+  const inlineVideoRef = useRef(null)
+  const contentRef = useRef(null);
 
   const [dragActive, setDragActive] = useState(false);
   const [authorDragActive, setAuthorDragActive] = useState(false);
   const [videoDragActive, setVideoDragActive] = useState(false);
   const [isPublishing, setIsPublishing] = useState(false);
-
-
+ const [uploadingImage, setUploadingImage] = useState(false);
+const [uploadingVideo, setUploadingVideo] = useState(false);
   const [preview, setPreview] = useState(null);
   const [authorPreview, setAuthorPreview] = useState(null);
   const [videoPreview, setVideoPreview] = useState(null);
@@ -46,9 +49,9 @@ export default function ArticleEditor() {
     videoUrl: ''
   });
 
-  const categories = ["Politics", "Technology", "Business", "Environment", "Urbanville", "Gender", "Counties", "Health", "Education", "Sports", "Opinion", "Investigation"];
+  const categories = ["Faith","Christ", "Hoops", "Chelsea","Sports","Animals", "Tech", "Opnion", "Film", "VFX", "Basketball Film", "Finance", "Opinion", "Travel"];
   const subcategories = {
-    "Sports": ["UrbanVille", "Football", "Basketball", "Athletics", "Rugby", "Tennis", "Boxing", "Cricket"],
+    "Sports": [ "Football", "Basketball", "Gym", "World Cup", "NBA Finals"],
   };
 
   // Load draft from local storage on mount
@@ -71,7 +74,15 @@ export default function ArticleEditor() {
               category: blog.category || 'Technology',
               subcategory: blog.subcategory || '',
               author: blog.author || '',
-              content: blog.content || '',
+              content: Array.isArray(blog.content)
+              ? blog.content.map(block => {
+                if (block.type === 'text')  return block.value;
+                if (block.type === 'image') return `![${block.alt || 'image'}](${block.url})`;
+                if (block.type === 'video') return `!video[${block.caption || 'video'}](${block.url})`;
+                if (block.type === 'embed') return `!embed[${block.caption || 'embed'}](${block.url})`;
+                return '';
+               }).join('\n\n')
+             : blog.content || '',
               tags: blog.tags || '',
               featured: blog.featured || false,
               editorsPick: blog.editorsPick || false,
@@ -80,7 +91,7 @@ export default function ArticleEditor() {
               videoUrl: blog.videoUrl || ''
             });
             if (blog.image) setPreview({ url: blog.image, type: 'image' });
-            if (blog.authorImage) setAuthorPreview({ url: blog.authorImage });
+            if (blog.authorImages?.webp) setAuthorPreview({ url: blog.authorImages.webp, type: 'image' });
             if (blog.videoUrl) setVideoPreview({ url: blog.videoUrl, type: 'video' });
           }
         } catch (err) {
@@ -105,6 +116,30 @@ export default function ArticleEditor() {
       [name]: type === 'checkbox' ? checked : value
     }));
   };
+
+ const insertAtCursor = (text) => {
+  const textarea = contentRef.current;
+  if (!textarea) return;
+
+  const start = textarea.selectionStart ?? formData.content.length;
+  const end = textarea.selectionEnd ?? formData.content.length;
+
+  const before = formData.content.slice(0, start);
+  const after = formData.content.slice(end);
+
+  const updated = before + text + after;
+
+  setFormData((prev) => ({
+    ...prev,
+    content: updated,
+  }));
+
+  requestAnimationFrame(() => {
+    textarea.focus();
+    const pos = start + text.length;
+    textarea.setSelectionRange(pos, pos);
+  });
+};;
 
   const handleFile = (file, type) => {
     if (!file) return;
@@ -215,7 +250,64 @@ export default function ArticleEditor() {
     }
 
   };
+const handleInlineImageUpload = async (file) => {
+  if (!file) return;
 
+  try {
+    setUploadingImage(true);
+
+    // Uses api.js uploadInlineMedia — Axios interceptor auto-attaches Bearer token
+    const result = await uploadInlineMedia(file);
+
+    if (!result?.success) {
+      enqueueSnackbar(result?.message || "Image upload failed", { variant: "error" });
+      return;
+    }
+
+    const url = result.urls?.webp;
+    if (!url) throw new Error("No image URL returned");
+
+    insertAtCursor(`![image](${url})`);
+
+  } catch (err) {
+    enqueueSnackbar(err?.response?.data?.message || err.message, { variant: "error" });
+  } finally {
+    setUploadingImage(false);
+  }
+};
+
+const handleInlineVideoUpload = async (file) => {
+  if (!file) return;
+
+  try {
+    setUploadingVideo(true);
+
+    // Uses api.js uploadInlineMedia — Axios interceptor auto-attaches Bearer token
+    const result = await uploadInlineMedia(file);
+
+    if (!result?.success) {
+      enqueueSnackbar(result?.message || "Video upload failed", { variant: "error" });
+      return;
+    }
+
+    const url = result.urls?.url;
+    if (!url) throw new Error("No video URL returned");
+
+    insertAtCursor(`!video[video](${url})`);
+
+  } catch (err) {
+    enqueueSnackbar(err?.response?.data?.message || err.message, { variant: "error" });
+  } finally {
+    setUploadingVideo(false);
+  }
+};
+
+const handleEmbedInsert = () => {
+  const url = prompt("Enter embed URL (YouTube, etc):");
+  if (!url) return;
+
+  insertAtCursor(`!embed[embed](${url})`);
+};
   return (
     <div className="min-h-screen bg-background text-foreground transition-colors duration-300">
       <div className="sticky top-0 bg-card/80 backdrop-blur-md border-b border-border z-10 px-6 py-4">
@@ -252,6 +344,22 @@ export default function ArticleEditor() {
       <main className="max-w-5xl mx-auto p-6 sm:p-10">
         <form className="grid grid-cols-1 lg:grid-cols-3 gap-10" onSubmit={handleSubmit}>
           <div className="lg:col-span-2 space-y-8">
+           <input
+           ref={inlineImageRef}
+           type="file"
+           className="hidden"
+           accept="image/*"
+           onChange={(e) => handleInlineImageUpload(e.target.files[0])}
+           />
+           
+           <input
+           ref={inlineVideoRef}
+           type="file"
+           className="hidden"
+           accept="video/*"
+           onChange={(e) => handleInlineVideoUpload(e.target.files[0])}
+           />
+           
             <div className="space-y-2">
               <label className="text-xs font-bold uppercase tracking-widest text-muted-foreground ml-1">Article Title</label>
               <input
@@ -277,16 +385,53 @@ export default function ArticleEditor() {
                 className="w-full bg-muted/30 border border-border rounded-2xl p-4 text-lg focus:ring-2 focus:ring-primary/20 focus:border-primary outline-none transition-all min-h-[100px] resize-none"
               />
             </div>
+            <div className="flex gap-3 mb-2">
+  <button
+    type="button"
+    disabled={uploadingImage}
+    onClick={() => inlineImageRef.current.click()}
+    className="px-3 py-1 bg-red-600 rounded cursor-pointer"
+  >
+     Image
+  </button>
 
+  <button
+    type="button"
+    disabled={uploadingVideo}
+    onClick={() => inlineVideoRef.current.click()}
+    className="px-3 py-1 bg-red-600 rounded cursor-pointer"
+  >
+     Video
+  </button>
+
+  <button
+    type="button"
+    onClick={handleEmbedInsert}
+    className="px-3 py-1 bg-red-600 rounded cursor-pointer"
+  >
+     Embed
+  </button>
+
+  {(uploadingVideo || uploadingImage) && (
+    <span className="text-sm text-muted-foreground">
+      Uploading...
+    </span>
+  )}
+</div>
             <div className="space-y-4 pt-4 border-t border-border">
               <textarea
+                ref={contentRef}
                 name="content"
                 value={formData.content}
                 onChange={handleChange}
                 placeholder="Start telling your story here..."
                 className="w-full bg-transparent border-none focus:ring-0 text-xl font-sans leading-relaxed min-h-[400px] p-0 resize-none"
               />
+              <p className="text-lg text-red-600 mt-2">
+                Tip: ![alt](url) • !video[caption](url) • !embed[caption](url)
+                </p>
             </div>
+
 
             <div className="space-y-4 pt-4 border-t border-border">
               <div className="flex items-center gap-2 text-muted-foreground">

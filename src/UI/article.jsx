@@ -1,6 +1,6 @@
 import { useState, useEffect, useRef } from "react";
 import { useParams, Link } from "react-router-dom";
-import { mockArticles } from "../../constants/index";
+
 import OptimizedImage from "../utils/OptimizedImage";
 import {
     getOneBlog,
@@ -55,10 +55,7 @@ export default function Article() {
                     setLikes(response.data.likes || 0);
                     setViewCount(response.data.views || 0);
                 } else {
-                    const fallback = mockArticles.find((a) => String(a._id || a.id) === String(id));
-                    setArticle(fallback);
-                    setLikes(Math.floor(Math.random() * 500) + 100);
-                    setViewCount(5000);
+                    setArticle(null);
                 }
                 // Fetch Related Blogs
                 const relatedRes = await getRelatedBlogs(id);
@@ -80,11 +77,8 @@ export default function Article() {
                     setComments(commentsResponse.data);
                 }
             } catch (err) {
-                console.warn("API unavailable, using mock data:", err);
-                const fallback = mockArticles.find((a) => String(a._id || a.id) === String(id));
-                setArticle(fallback);
-                setLikes(Math.floor(Math.random() * 500) + 100);
-                setViewCount(5000);
+                console.warn("API unavailable:", err);
+                setArticle(null);
             } finally {
                 setLoading(false);
             }
@@ -173,7 +167,14 @@ export default function Article() {
 
         setIsLoadingAudio(true);
         try {
-            const fullText = `${article.title}. ${article.excerpt}. ${article.content}`;
+
+            const contentText = Array.isArray(article.content)
+            ? article.content
+            .filter(block => block.type === 'text')
+            .map(block => block.value)
+            .join(' ')
+            : article.content;
+            const fullText = `${article.title}. ${article.excerpt}. ${contentText}`;
             console.log("Fetching TTS for text length:", fullText.length);
             const blob = await streamTTS(fullText);
             console.log("Received blob:", blob.type, blob.size);
@@ -311,9 +312,9 @@ export default function Article() {
                                 <div className="flex items-center justify-between flex-wrap gap-4">
                                     <div className="flex items-center gap-4">
                                         <OptimizedImage
-                                            webpSrc={article.authorImage?.webp || "/img/default-avatar.webp"}
-                                            jpegSrc={article.authorImage?.jpeg || "/img/default-avatar.jpeg"}
-                                            avifSrc={article.authorImage?.avif || "/img/default-avatar.avif"}
+                                            webpSrc={article.authorImages?.webp || "/img/default-avatar.webp"}
+                                            jpegSrc={article.authorImages?.jpeg || "/img/default-avatar.jpeg"}
+                                            avifSrc={article.authorImages?.avif || "/img/default-avatar.avif"}
                                             alt={article.author}
                                             className="w-12 h-12 rounded-full border border-border object-cover"
                                         />
@@ -376,9 +377,77 @@ export default function Article() {
 
                             </div>
 
-                            <p className="text-lg md:text-2xl leading-relaxed text-foreground/90 max-w-prose font-blogger">
-                                {article.content}
-                            </p>
+                            <div className="space-y-6">
+  {Array.isArray(article.content) ? (
+    article.content.map((block, index) => {
+      switch (block.type) {
+
+        case "text":
+          return (
+            <p
+              key={index}
+              className="text-lg md:text-2xl leading-relaxed text-foreground/90 max-w-prose font-blogger whitespace-pre-wrap"
+            >
+              {block.value}
+            </p>
+          );
+
+        case "image":
+          return (
+            <div key={index} className="w-72 h-72  flex items-center justify-center ">
+              <img
+                src={block.url}
+                alt={block.alt || "article image"}
+                loading="lazy"
+                className="w-full rounded-2xl object-cover"
+              />
+              {block.caption && (
+                <p className="text-sm text-muted-foreground mt-2">
+                  {block.caption}
+                </p>
+              )}
+            </div>
+          );
+
+        case "video":
+          return (
+            <div key={index} className="w-full">
+              <video
+                src={block.url}
+                controls
+                className="w-full rounded-2xl"
+              />
+              {block.caption && (
+                <p className="text-sm text-muted-foreground mt-2">
+                  {block.caption}
+                </p>
+              )}
+            </div>
+          );
+
+        case "embed":
+          return (
+            <div key={index} className="w-full aspect-video">
+              <iframe
+                src={block.url}
+                className="w-full h-full rounded-2xl border-0"
+                allowFullScreen
+                title="embedded content"
+              />
+            </div>
+          );
+
+        default:
+          return null;
+      }
+    })
+  ) : (
+    // fallback for old string format (IMPORTANT for backward compatibility)
+    <p className="text-lg md:text-2xl leading-relaxed text-foreground/90 max-w-prose font-blogger whitespace-pre-wrap">
+      {article.content}
+    </p>
+  )}
+</div>
                             {article.videoUrl && (
                                 <div className="w-full mt-10 rounded-2xl overflow-hidden shadow-2xl border border-border group relative">
                                     {article.videoUrl.includes('youtube.com') || article.videoUrl.includes('youtu.be') || article.videoUrl.includes('vimeo.com') ? (

@@ -28,6 +28,7 @@ import { login, register, refresh, logout } from "./controllers/authController.j
 import { protect } from "./middleware/authMiddleware.js";
 import { streamTTS } from "./controllers/ttsController.js";
 import mongoose from "mongoose";
+import { uploadInlineMedia } from "./controllers/mediaController.js";
 
 const app = express();
 
@@ -56,7 +57,7 @@ app.use((req, res, next) => {
 // Rate Limiter
 const limiter = rateLimit({
     windowMs: 15 * 60 * 1000, // 15 minutes
-    limit: 100, // Limit each IP to 100 requests per windowMs
+    limit: 1000, // Limit each IP to 100 requests per windowMs
     standardHeaders: 'draft-7',
     legacyHeaders: false,
     message: { success: false, message: "Too many requests from this IP, please try again after 15 minutes" }
@@ -88,6 +89,7 @@ app.put("/api/blogs/:id", protect, updateBlog);
 app.delete("/api/blogs/:id", protect, deleteBlog);
 app.patch("/api/blogs/:id/status", protect, updateBlogStatus);
 app.get("/api/media", protect, getMedia);
+app.post("/api/media/upload", protect, uploadInlineMedia)
 
 app.patch("/api/blogs/:id/like", likeBlog);
 app.post("/api/blogs/:id/comments", postComment);

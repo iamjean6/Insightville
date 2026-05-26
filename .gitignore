@@ -12,9 +12,11 @@ node_modules
 .env
 .env.*
 backend/.env
+Backend/utils/parseContent.test.js
 dist
 dist-ssr
 *.local
+/architecture_overview.md
 
 # Editor directories and files
 .vscode/*

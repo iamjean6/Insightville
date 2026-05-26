@@ -1,4 +1,4 @@
-import { mockArticles } from "../../constants/index";
+
 import Card5 from "../cards/card5";
 import Lottie from "lottie-react";
 import Pagination from "../utils/pagination";
@@ -26,13 +26,13 @@ export default function EditorsPick() {
                 const response = await getBlogs();
                 if (response && response.data) {
                     const picks = response.data.filter(p => p.editorsPick);
-                    setPosts(picks.length > 0 ? picks : mockArticles.filter(p => p.isFeatured));
+                    setPosts(picks.length > 0 ? picks : []);
                 } else {
-                    setPosts(mockArticles.filter(p => p.isFeatured));
+                    setPosts([]);
                 }
             } catch (err) {
-                console.warn("API unavailable, using mock data:", err);
-                setPosts(mockArticles.filter(p => p.isFeatured));
+                console.warn("API unavailable:", err);
+                setPosts([]);
             } finally {
                 setLoading(false);
             }

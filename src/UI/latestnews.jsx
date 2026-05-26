@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from "react";
 import Card3 from "../cards/card3";
-import { mockArticles } from "../../constants/index";
+
 import { getBlogs, getLatestBlogs, getBlogsByCategory } from "../../services/api";
 import { useCategory } from "../utils/CategoryContext";
 import Pagination from "../utils/pagination";
@@ -28,19 +28,13 @@ export default function Latestnews() {
                     setPosts(response.data);
                     setFilteredPosts(response.data);
                 } else {
-                    const fallback = selectedCategory === "All"
-                        ? mockArticles
-                        : mockArticles.filter(post => post.category === selectedCategory);
-                    setPosts(fallback);
-                    setFilteredPosts(fallback);
+                    setPosts([]);
+                    setFilteredPosts([]);
                 }
             } catch (err) {
-                console.warn("API unavailable, using mock data:", err);
-                const fallback = selectedCategory === "All"
-                    ? mockArticles
-                    : mockArticles.filter(post => post.category === selectedCategory);
-                setPosts(fallback);
-                setFilteredPosts(fallback);
+                console.warn("API unavailable:", err);
+                setPosts([]);
+                setFilteredPosts([]);
             } finally {
                 setLoading(false);
             }

@@ -48,7 +48,7 @@ export default function Sidebar({ isOpen, onClose }) {
 
                     {/* Header */}
                     <div className="flex justify-between items-center mb-10 pb-6 border-b border-border">
-                        <p className="text-2xl font-alfa text-primary tracking-wide drop-shadow-sm">Insightville</p>
+                        <p className="text-2xl font-alfa text-primary tracking-wide drop-shadow-sm">Rizzen</p>
                         <button
                             onClick={onClose}
                             className="text-muted-foreground hover:text-primary bg-muted hover:bg-accent p-2 rounded-full transition-colors"
@@ -63,13 +63,13 @@ export default function Sidebar({ isOpen, onClose }) {
                             <LottieIcon url="/img/Home.json" /> Home
                         </Link>
                         <Link to="/about" onClick={onClose} className="text-foreground hover:text-primary transition-colors flex items-center gap-4">
-                            <LottieIcon url="/img/About _us.json" /> About Us
+                            <LottieIcon url="/img/About _us.json" /> About Me
                         </Link>
                         <Link to="/contact" onClick={onClose} className="text-foreground hover:text-primary transition-colors flex items-center gap-4">
-                            <LottieIcon url="/img/iPhone.json" /> Contact
+                            <LottieIcon url="/img/iPhone.json" /> Contact Me
                         </Link>
                         <Link to="/collaborate" onClick={onClose} className="text-foreground hover:text-primary transition-colors flex items-center gap-4">
-                            <LottieIcon url="/img/Writing.json" /> Write for us
+                            <LottieIcon url="/img/Writing.json" /> Hire Me
                         </Link>
                         <button
                             onClick={toggleDarkMode}
@@ -84,16 +84,19 @@ export default function Sidebar({ isOpen, onClose }) {
 
                     {/* Bottom CTA / Socials area */}
                     <div className="mt-auto pt-8 border-t border-border">
-                        <p className="text-sm text-muted-foreground font-changa mb-4 uppercase tracking-widest font-bold">Follow us</p>
+                        <p className="text-sm text-muted-foreground font-changa mb-4 uppercase tracking-widest font-bold">Follow me</p>
                         <div className="flex gap-4">
                             <div className="w-10 h-10 rounded-full flex items-center justify-center cursor-pointer">
-                                <img src="/img/facebook.svg" alt="Facebook" className="w-6 h-6" />
+                               <a href="https://www.facebook.com/profile.php?id=100014713896314" target="_blank"> <img src="/img/facebook.svg" alt="Facebook" className="w-6 h-6" /></a>
                             </div>
                             <div className="w-10 h-10 rounded-full flex items-center justify-center cursor-pointer">
-                                <img src="/img/linkedin.svg" alt="Linkedin" className="w-6 h-6" />
-                            </div>
+                                <a href="https://www.linkedin.com/in/jean-powell-a842002a5?utm_source=share_via&utm_content=profile&utm_medium=member_android" target="_blank">  <img src="/img/linkedin.svg" alt="Linkedin" className="w-6 h-6" /></a>
+                                </div>
                             <div className="w-10 h-10 round-full flex items-center justify-center cursor-pointer">
-                                <img src="/img/ig.svg" alt="Instagram" className="w-6 h-6" />
+                                <a href="https://www.instagram.com/i.amjean_?igsh=Y3kwMGsxdWQ5enFz" target="_blank">
+                                     <img src="/img/ig.svg" alt="Instagram" className="w-6 h-6" />
+                                </a>
+                               
                             </div>
                         </div>
                     </div>

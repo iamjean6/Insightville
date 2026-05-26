@@ -7,6 +7,7 @@ import { deleteObject } from "../utils/deleteObject.js";
 import cache from "../cache/cache.js";
 import mongoose from "mongoose";
 import sharp from "sharp";
+import { parseContent } from "../utils/parser.js";
 
 export const getBlogs = async (req, res) => {
     try {
@@ -46,10 +47,13 @@ export const getOneBlog = async (req, res) => {
         } catch (s3err) {
             console.warn("S3 getObject failed for key:", blog.key, s3err.message);
         }
-
-        await cache.saveBlogDetail(id, blog);
+          const blogResponse = {
+            ...blog.toObject(),
+            content: parseContent(blog.content)
+        };
+        await cache.saveBlogDetail(id, blogResponse);
         console.log("Blog fetched from database, views incremented, and cached");
-        return res.status(200).json({ success: true, data: blog });
+        return res.status(200).json({ success: true, data: blogResponse });
     } catch (err) {
         console.error("Error fetching blog:", err);
         return res.status(500).json({ success: false, message: err.message });

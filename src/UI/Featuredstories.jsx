@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from "react";
-import { mockArticles } from "../../constants/index";
+
 import Overlay from "../cards/overlay";
 import Standard from "../cards/standard";
 import Pagination from "../utils/pagination";
@@ -34,13 +34,13 @@ export default function Featuredstories() {
                     setPosts(response.data);
                     setFilteredPosts(response.data);
                 } else {
-                    setPosts(mockArticles);
-                    setFilteredPosts(mockArticles);
+                    setPosts([]);
+                    setFilteredPosts([]);
                 }
             } catch (err) {
-                console.warn("API unavailable, using mock data:", err);
-                setPosts(mockArticles);
-                setFilteredPosts(mockArticles);
+                console.warn("API unavailable:", err);
+                setPosts([]);
+                setFilteredPosts([]);
             } finally {
                 setLoading(false);
             }

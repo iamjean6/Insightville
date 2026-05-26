@@ -41,10 +41,14 @@ const Card3 = ({ article }) => {
 
                     {/* Author */}
                     <div className="flex items-center gap-3">
-                        <img
-                            src="https://images.unsplash.com/photo-1493976040374-85c8e12f0c0e?q=80&w=800&auto=format&fit=crop"
-                            className="w-8 h-8 rounded-full border border-border"
-                        />
+                     
+                         <OptimizedImage
+                                            webpSrc={article.authorImages?.webp || "/img/default-avatar.webp"}
+                                            jpegSrc={article.authorImages?.jpeg || "/img/default-avatar.jpeg"}
+                                            avifSrc={article.authorImages?.avif || "/img/default-avatar.avif"}
+                                            alt={article.author}
+                                            className="w-8 h-8 rounded-full border border-border"
+                                        />
 
                         <div>
                             <p className="text-sm font-semibold text-foreground">{article.author}</p>

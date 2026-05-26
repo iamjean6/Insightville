@@ -1,4 +1,4 @@
-import { mockArticles } from "../../constants/index";
+
 import Card4 from "../cards/card4";
 import useEmblaCarousel from 'embla-carousel-react'
 import { getPopularBlogs } from "../../services/api";
@@ -40,11 +40,11 @@ export default function Popular() {
                 if (response && response.success) {
                     setPosts(response.data)
                 } else {
-                    setPosts(mockArticles)
+                    setPosts([])
                 }
             } catch (err) {
-                console.warn("API unavailable, using mock data:", err)
-                setPosts(mockArticles)
+                console.warn("API unavailable:", err)
+                setPosts([])
             } finally {
                 setLoading(false)
             }

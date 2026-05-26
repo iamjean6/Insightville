@@ -50,11 +50,10 @@ export default function Navbar() {
 
     ]
 
-    const categories = ["All", "Urbanville", "Politics", "Technology", "Business", "Environment", "Gender", "Counties", "Health", "Education", "Sports", "Opinion", "Investigation"];
-    const subcategories = {
-        "Sports": ["UrbanVille", "Football", "Basketball", "Athletics", "Rugby", "Tennis", "Boxing", "Cricket"],
-    };
-
+   const categories = ["All","Faith","Christ", "Hoops", "Chelsea","Sports","Animals", "Tech",  "Film", "VFX", "Basketball Film", "Finance", "Opinion", "Travel"];
+  const subcategories = {
+    "Sports": [ "Football", "Basketball", "Gym", "World Cup", "NBA Finals"],
+  };
     return (
         <nav className="sticky top-0 z-50 w-full bg-background border-b border-border shadow-sm font-sans transition-colors duration-300">
             <Sidebar isOpen={isSidebarOpen} onClose={() => setIsSidebarOpen(false)} />
@@ -63,7 +62,7 @@ export default function Navbar() {
                 <div className="flex justify-between items-center h-16">
                     <div className="flex items-center gap-3">
                         <img src="/img/bloglogo.png" alt="Insightville" className="w-12 h-12 object-contain rounded-full" />
-                        <p className="text-2xl font-alfa text-primary tracking-wide drop-shadow-sm">Insightville</p>
+                        <p className="text-2xl font-alfa text-primary tracking-wide drop-shadow-sm">Rizzen</p>
                     </div>
 
                     <div className="flex items-center gap-4 md:gap-8">
@@ -74,7 +73,7 @@ export default function Navbar() {
                             About
                         </Link>
                         <Link to="/contact" className="font-changa hidden md:block text-muted-foreground hover:text-primary tracking-wide transition-colors">
-                            Contact us
+                            Contact me
                         </Link>
 
                         {/* Dark Mode Toggle */}

@@ -10,23 +10,23 @@ export default function Footer() {
 
                     {/* Brand & Description */}
                     <div className="flex flex-col">
-                        <p className="text-3xl font-alfa text-primary tracking-wide drop-shadow-sm mb-6">Insightville</p>
+                        <p className="text-3xl font-alfa text-primary tracking-wide drop-shadow-sm mb-6">Rizzen</p>
                         <p className="text-muted-foreground text-sm leading-relaxed font-changa mb-6">
-                            Insightville is a digital news platform delivering timely, accurate, and in-depth coverage across a wide spectrum of topics.
-                            We deliver credible journalism that informs, educates, and drives conversation.
+                            Rizzen is a digital outreach platform delivering bro's(me) thoughts in a timely, accurate, and in-depth coverage across a wide spectrum of topics.
+                            I deliver insightful thoughts on God, how he works through our lives and a few other aspects that inform, educate, and drive conversations.
                         </p>
                         {/* Social Links */}
                         <div className="flex gap-4">
-                            <a href="#" className="w-10 h-10 rounded-full flex items-center justify-center text-muted-foreground hover:text-primary hover:bg-muted transition-all shadow-sm">
+                            <a href="https://www.facebook.com/profile.php?id=100014713896314" className="w-10 h-10 rounded-full flex items-center justify-center text-muted-foreground hover:text-primary hover:bg-muted transition-all shadow-sm" target="_blank" rel="noopener noreferrer">
                                 <img src="/img/facebook.svg" alt="Facebook" className="w-6 h-6" />
                             </a>
-                            <a href="#" className="w-10 h-10 rounded-full flex items-center justify-center text-muted-foreground hover:text-primary hover:bg-muted transition-all shadow-sm">
+                            <a href="https://www.instagram.com/i.amjean_?igsh=Y3kwMGsxdWQ5enFz" target="_blank" className="w-10 h-10 rounded-full flex items-center justify-center text-muted-foreground hover:text-primary hover:bg-muted transition-all shadow-sm">
                                 <img src="/img/ig.svg" alt="Instagram" className="w-6 h-6" />
                             </a>
-                            <a href="#" className="w-10 h-10 rounded-full flex items-center justify-center text-muted-foreground hover:text-primary hover:bg-muted transition-all shadow-sm">
+                            <a href="https://www.linkedin.com/in/jean-powell-a842002a5?utm_source=share_via&utm_content=profile&utm_medium=member_android" target="_blank" className="w-10 h-10 rounded-full flex items-center justify-center text-muted-foreground hover:text-primary hover:bg-muted transition-all shadow-sm">
                                 <img src="/img/linkedin.svg" alt="Linkedin" className="w-6 h-6" />
                             </a>
-                            <a href="#" className="w-10 h-10 rounded-full flex items-center justify-center text-muted-foreground hover:text-primary hover:bg-muted transition-all shadow-sm">
+                            <a href="#" target="_blank" className="w-10 h-10 rounded-full flex items-center justify-center text-muted-foreground hover:text-primary hover:bg-muted transition-all shadow-sm">
                                 <img src="/img/gmail.svg" alt="gmail" className="w-6 h-6" />
                             </a>
                         </div>
@@ -52,10 +52,10 @@ export default function Footer() {
                             <span className="w-6 h-px bg-primary"></span> Collaborate
                         </h4>
                         <p className="text-muted-foreground text-sm font-changa mb-4">
-                            Partner with Insightville to reach a diverse and engaged audience. We offer tailored advertising solutions across our digital platforms to help amplify your brand and connect with the right audience.
+                            Partner with me to reach a diverse and engaged audience. I offer tailored advertising solutions across our digital platforms to help amplify your brand and connect with the right audience.
                         </p>
                         <button className="bg-transparent border border-primary text-primary hover:bg-primary/10 font-vend px-5 py-2 rounded-lg transition-colors w-full text-center">
-                            Write for Us
+                            Collaborate with me
                         </button>
                     </div>
 
@@ -71,11 +71,11 @@ export default function Footer() {
                             </li>
                             <li className="flex items-center gap-3 hover:text-primary transition-colors">
                                 <Phone size={18} className="text-primary shrink-0" />
-                                <span>+254 705748503</span>
+                                <span>+254 774431675</span>
                             </li>
                             <li className="flex items-center gap-3 hover:text-primary transition-colors cursor-pointer">
                                 <Mail size={18} className="text-primary shrink-0" />
-                                <span>hello@insightville.io</span>
+                                <span>jeanobuya8@gmail.com</span>
                             </li>
                         </ul>
                     </div>
@@ -84,8 +84,8 @@ export default function Footer() {
 
                 {/* Bottom Bar */}
                 <div className="border-t border-border pt-8 flex flex-col md:flex-row justify-between items-center gap-4 text-xs font-vend text-muted-foreground">
-                    <p>&copy; {new Date().getFullYear()} Insightville. All rights reserved.</p>
-                    <p>Powered by <span className="text-primary">UrbanvilleSports</span></p>
+                    <p>&copy; {new Date().getFullYear()} Rizzen. All rights reserved.</p>
+                    <p>Powered by <span className="text-primary">Christ</span></p>
                 </div>
 
             </div>
