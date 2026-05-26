@@ -13,6 +13,11 @@ node_modules
 .env.*
 backend/.env
 Backend/utils/parseContent.test.js
+Backend/register_admin.js
+Backend/register_log.txt
+Backend/test-redis-6380.js
+Backend/test-redis.js
+Backend/final_register.js
 dist
 dist-ssr
 *.local
