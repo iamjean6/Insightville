@@ -70,7 +70,7 @@ const BreakingTicker = () => {
             {/* Close Button */}
             <button 
                 onClick={() => setIsVisible(false)}
-                className="ml-4 p-1 hover:bg-white/10 rounded-full transition-colors"
+                className="ml-4 p-1 hover:bg-white/10 rounded-full transition-colors relative z-20 cursor-pointer"
                 aria-label="Close"
             >
                 <X size={16} />

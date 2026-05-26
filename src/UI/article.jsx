@@ -88,6 +88,38 @@ export default function Article() {
         window.scrollTo(0, 0);
     }, [id]);
 
+    useEffect(() => {
+        const trackArticleView = async () => {
+            let visitorId = localStorage.getItem("visitor_id");
+            if (!visitorId) {
+                visitorId = crypto.randomUUID();
+                localStorage.setItem("visitor_id", visitorId);
+            }
+             
+            let userId = null;
+            try {
+                const user = JSON.parse(localStorage.getItem("user"));
+                if (user) userId = user._id || user.id;
+            } catch (e) {}
+
+            try {
+                await fetch("http://localhost:5000/api/events/view", {
+                    method: "POST",
+                    headers: { "Content-Type": "application/json" },
+                    body: JSON.stringify({
+                        blogId: id,
+                        visitorId: visitorId,
+                        userId: userId,
+                    })
+                });
+            } catch (err) {
+                console.error("Failed to track view:", err);
+            }
+        };
+
+        trackArticleView();
+    }, [id]);
+
     const handleLike = async () => {
         if (isLiked) return; // Simple prevent multiple likes for now
 
@@ -174,7 +206,7 @@ export default function Article() {
             .map(block => block.value)
             .join(' ')
             : article.content;
-            const fullText = `${article.title}. ${article.excerpt}. ${contentText}`;
+            const fullText = `${article.title || ''}. ${article.excerpt || ''}. ${contentText || ''}`;
             console.log("Fetching TTS for text length:", fullText.length);
             const blob = await streamTTS(fullText);
             console.log("Received blob:", blob.type, blob.size);
@@ -220,7 +252,6 @@ export default function Article() {
             </div>
         );
     }
-
     if (!article) {
         return (
             <div className="w-full bg-background py-20 text-center">

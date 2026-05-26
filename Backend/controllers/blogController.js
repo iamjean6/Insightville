@@ -37,10 +37,11 @@ export const getOneBlog = async (req, res) => {
             console.log("Blog fetched from cache");
             return res.status(200).json({ success: true, data: cachedBlog });
         }
-        const blog = await Blog.findByIdAndUpdate(id, { $inc: { views: 1 } }, { new: true });
+        const blog = await Blog.findById(id);
         if (!blog) {
             return res.status(404).json({ success: false, message: "Blog not found" });
         }
+        
         // Get S3 object if needed, but don't let it block the response if it fails
         try {
             await getObject(blog.key);

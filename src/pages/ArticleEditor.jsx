@@ -49,7 +49,7 @@ const [uploadingVideo, setUploadingVideo] = useState(false);
     videoUrl: ''
   });
 
-  const categories = ["Faith","Christ", "Hoops", "Chelsea","Sports","Animals", "Tech", "Opnion", "Film", "VFX", "Basketball Film", "Finance", "Opinion", "Travel"];
+  const categories = ["Faith","Christ", "Hoops", "Chelsea","Sports","Animals", "Tech", "Film", "VFX", "Basketball Film", "Finance", "Opinion", "Travel"];
   const subcategories = {
     "Sports": [ "Football", "Basketball", "Gym", "World Cup", "NBA Finals"],
   };

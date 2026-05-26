@@ -27,8 +27,10 @@ import {
 import { login, register, refresh, logout } from "./controllers/authController.js";
 import { protect } from "./middleware/authMiddleware.js";
 import { streamTTS } from "./controllers/ttsController.js";
+import { handleViewEvent } from "./controllers/eventController.js";
 import mongoose from "mongoose";
 import { uploadInlineMedia } from "./controllers/mediaController.js";
+import "./workers/viewProcessor.js";
 
 const app = express();
 
@@ -82,6 +84,9 @@ app.get("/api/blogs/breaking", getBreakingBlogs);
 app.get("/api/blogs/category/:category", getBlogCategory);
 app.get("/api/blogs/:id", getOneBlog);
 app.get("/api/blogs/:id/related", getRelatedBlogs);
+
+// Event Routes
+app.post("/api/events/view", handleViewEvent);
 
 // Protected Blog Routes
 app.post("/api/blogs", protect, createBlog);
