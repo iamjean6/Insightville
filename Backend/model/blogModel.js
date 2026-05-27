@@ -94,4 +94,7 @@ BlogSchema.index({ breaking: 1 });
 BlogSchema.index({ views: -1 });
 BlogSchema.index({ likes: -1 });
 
+// Text Index for full-text search
+BlogSchema.index({ title: 'text', content: 'text', tags: 'text' });
+
 export default mongoose.model("Blog", BlogSchema);

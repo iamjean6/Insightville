@@ -30,6 +30,7 @@ import { streamTTS } from "./controllers/ttsController.js";
 import { handleViewEvent } from "./controllers/eventController.js";
 import mongoose from "mongoose";
 import { uploadInlineMedia } from "./controllers/mediaController.js";
+import searchRouter from "./routes/search.js";
 import "./workers/viewProcessor.js";
 
 const app = express();
@@ -106,6 +107,9 @@ app.get("/api/blogs/:id/comments", getComments);
 
 // Text to Speech
 app.post("/api/tts", streamTTS);
+
+// Search Route
+app.use("/api", searchRouter);
 
 // Connect to database
 const connectDB = async () => {

@@ -238,3 +238,8 @@ export const streamTTS = async (text) => {
     const response = await api.post("/tts", { text }, { responseType: "blob" });
     return response.data;
 };
+
+export const fetchResults= async (q) =>{
+    const response= await api.get(`/search?q=${q}`)
+    return response.data
+}
