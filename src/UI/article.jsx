@@ -1,5 +1,5 @@
 import { useState, useEffect, useRef } from "react";
-import { useParams, Link } from "react-router-dom";
+import { useParams, Link, useNavigate } from "react-router-dom";
 
 import OptimizedImage from "../utils/OptimizedImage";
 import {
@@ -9,7 +9,8 @@ import {
     postComment,
     streamTTS,
     getPopularBlogs,
-    getRelatedBlogs
+    getRelatedBlogs,
+    subscribeToNewsletter
 } from "../../services/api";
 
 import { Play, Pause, MailCheckIcon, Tag, ThumbsUpIcon, Share2, Clipboard, MessageCircle, Send, Volume2 } from "lucide-react";
@@ -20,12 +21,16 @@ import { enqueueSnackbar } from "notistack";
 
 export default function Article() {
     const { id } = useParams();
+    const navigate = useNavigate();
     const [likes, setLikes] = useState(Math.floor(Math.random() * 500) + 100);
     const [isLiked, setIsLiked] = useState(false);
     const [viewCount, setViewCount] = useState(0);
     const [article, setArticle] = useState(null);
     const [loading, setLoading] = useState(true);
     const [comments, setComments] = useState([]);
+    const [commentPage, setCommentPage] = useState(1);
+    const [hasMoreComments, setHasMoreComments] = useState(true);
+    const [isLoadingMoreComments, setIsLoadingMoreComments] = useState(false);
     const [newComment, setNewComment] = useState("");
     const [isSubmittingComment, setIsSubmittingComment] = useState(false);
 
@@ -34,6 +39,9 @@ export default function Article() {
     const audioRef = useRef(null);
     const [relatedStories, setRelatedStories] = useState([]);
     const [popularStories, setPopularStories] = useState([]);
+
+    const [newsletterEmail, setNewsletterEmail] = useState("");
+    const [isSubscribing, setIsSubscribing] = useState(false);
 
     // Clean up audio on unmount
     useEffect(() => {
@@ -72,9 +80,10 @@ export default function Article() {
                 }
 
                 // Fetch Comments
-                const commentsResponse = await getBlogComments(id);
+                const commentsResponse = await getBlogComments(id, 1, 5);
                 if (commentsResponse && commentsResponse.success) {
                     setComments(commentsResponse.data);
+                    setHasMoreComments(commentsResponse.data.length === 5);
                 }
             } catch (err) {
                 console.warn("API unavailable:", err);
@@ -174,13 +183,34 @@ export default function Article() {
         try {
             const res = await postComment(id, { comment: newComment });
             if (res.success) {
-                setComments(prev => [...prev, res.data]);
+                // Prepend the new comment to the top of the list
+                setComments(prev => [res.data, ...prev]);
                 setNewComment("");
             }
         } catch (err) {
             console.error("Failed to post comment:", err);
+            if (err.response?.status === 401) {
+                enqueueSnackbar("Your session expired. Please sign in again.", { variant: "error" });
+            }
         } finally {
             setIsSubmittingComment(false);
+        }
+    };
+
+    const handleLoadMoreComments = async () => {
+        setIsLoadingMoreComments(true);
+        try {
+            const nextPage = commentPage + 1;
+            const res = await getBlogComments(id, nextPage, 5);
+            if (res && res.success) {
+                setComments(prev => [...prev, ...res.data]);
+                setCommentPage(nextPage);
+                setHasMoreComments(res.data.length === 5);
+            }
+        } catch (err) {
+            console.error("Failed to load more comments:", err);
+        } finally {
+            setIsLoadingMoreComments(false);
         }
     };
 
@@ -199,6 +229,19 @@ export default function Article() {
 
         setIsLoadingAudio(true);
         try {
+            const userStr = localStorage.getItem("user");
+            if (!userStr) {
+                enqueueSnackbar("Please sign in to listen to articles.", { variant: "info" });
+                navigate("/login");
+                return;
+            }
+            
+            const user = JSON.parse(userStr);
+            if (user.credits <= 0) {
+                enqueueSnackbar("You are out of audio credits!", { variant: "warning" });
+                navigate("/checkout");
+                return;
+            }
 
             const contentText = Array.isArray(article.content)
             ? article.content
@@ -240,8 +283,33 @@ export default function Article() {
             setIsSpeaking(true);
         } catch (err) {
             console.error("Failed to play audio:", err);
+            // If backend throws a 402 Payment Required (or similar error message)
+            if (err.response?.status === 402 || err.message?.includes("credits")) {
+                enqueueSnackbar("You need more credits to listen.", { variant: "warning" });
+                navigate("/checkout");
+            } else {
+                enqueueSnackbar("Failed to load audio. Please try again.", { variant: "error" });
+            }
         } finally {
             setIsLoadingAudio(false);
+        }
+    };
+
+    const handleSubscribe = async () => {
+        if (!newsletterEmail.trim()) return;
+        setIsSubscribing(true);
+        try {
+            const res = await subscribeToNewsletter(newsletterEmail);
+            if (res.success) {
+                enqueueSnackbar(res.message, { variant: "success" });
+                setNewsletterEmail("");
+            } else {
+                enqueueSnackbar(res.message || "Failed to subscribe", { variant: "error" });
+            }
+        } catch (err) {
+            enqueueSnackbar(err.response?.data?.message || "An error occurred", { variant: "error" });
+        } finally {
+            setIsSubscribing(false);
         }
     };
 
@@ -593,17 +661,34 @@ export default function Article() {
                                         {comments.map((comment, idx) => (
                                             <div key={comment._id || idx} className="bg-card border border-border p-6 rounded-2xl shadow-sm space-y-3">
                                                 <div className="flex items-center gap-3">
-                                                    <div className="w-10 h-10 bg-primary/10 rounded-full flex items-center justify-center text-primary font-bold">
-                                                        {comment.authorName ? comment.authorName[0] : "U"}
-                                                    </div>
+                                                    {comment.userId?.avatarUrl ? (
+                                                        <img src={comment.userId.avatarUrl} alt={comment.userId.name} className="w-10 h-10 rounded-full object-cover border border-border" />
+                                                    ) : (
+                                                        <div className="w-10 h-10 bg-primary/10 rounded-full flex items-center justify-center text-primary font-bold">
+                                                            {comment.userId?.name ? comment.userId.name[0].toUpperCase() : (comment.authorName ? comment.authorName[0].toUpperCase() : "U")}
+                                                        </div>
+                                                    )}
                                                     <div>
-                                                        <p className="font-bold text-foreground">{comment.authorName || "User"}</p>
+                                                        <p className="font-bold text-foreground">{comment.userId?.name || comment.authorName || "User"}</p>
                                                         <p className="text-xs text-muted-foreground">{new Date(comment.createdAt || Date.now()).toLocaleDateString()}</p>
                                                     </div>
                                                 </div>
                                                 <p className="text-muted-foreground leading-relaxed">{comment.comment}</p>
                                             </div>
                                         ))}
+                                        
+                                        {hasMoreComments && (
+                                            <div className="flex justify-center pt-4">
+                                                <button
+                                                    type="button"
+                                                    onClick={handleLoadMoreComments}
+                                                    disabled={isLoadingMoreComments}
+                                                    className="px-6 py-2 bg-muted text-muted-foreground hover:bg-primary hover:text-primary-foreground rounded-full font-semibold transition-all disabled:opacity-50"
+                                                >
+                                                    {isLoadingMoreComments ? "Loading..." : "Load More Comments"}
+                                                </button>
+                                            </div>
+                                        )}
                                     </div>
                                 ) : (
                                     <div className="w-full bg-muted/30 p-8 rounded-2xl border border-dashed border-border text-center space-y-4">
@@ -675,12 +760,14 @@ export default function Article() {
                                 <div className="space-y-3">
                                     <input
                                         type="email"
+                                        value={newsletterEmail}
+                                        onChange={(e) => setNewsletterEmail(e.target.value)}
                                         placeholder="Enter your email"
                                         className="w-full px-4 py-3 bg-muted/50 border border-border rounded-xl focus:outline-none focus:ring-2 focus:ring-primary/20 text-foreground placeholder:text-muted-foreground/50 transition-all font-sans"
                                     />
 
                                     <Button
-                                        title="Subscribe"
+                                        title={isSubscribing ? "Subscribing..." : "Subscribe"}
                                         containerClass="
                                             w-full
                                             inline-flex items-center justify-center 
@@ -691,8 +778,11 @@ export default function Article() {
                                             gap-2 
                                             hover:opacity-90 
                                             transition-all active:scale-95
+                                            disabled:opacity-50 disabled:cursor-not-allowed
                                         "
                                         rightIcon={<MailCheckIcon size={18} />}
+                                        onClick={handleSubscribe}
+                                        disabled={isSubscribing || !newsletterEmail.trim()}
                                     />
                                 </div>
                             </div>

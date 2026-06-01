@@ -9,6 +9,18 @@ export const handleViewEvent = async (req, res) => {
         return res.status(200).json({ message: "ignored" });
     }
     
+    const uniqueActor = userId || visitorId || ip;
+    const deduplicationKey = `view:${blogId}:${uniqueActor}`;
+    
+    // Check if they already viewed this blog in the last 12 hours
+    const alreadyViewed = await client.get(deduplicationKey);
+    if (alreadyViewed) {
+        return res.status(200).json({ message: "ignored - already viewed recently" });
+    }
+
+    // Mark as viewed for 12 hours (12 * 60 * 60 = 43200 seconds)
+    await client.set(deduplicationKey, "1", { EX: 43200 });
+
     const event = {
         blogId,
         visitorId,

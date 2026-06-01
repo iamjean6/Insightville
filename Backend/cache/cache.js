@@ -79,6 +79,18 @@ async function fetchViews(id) {
     return await getQuery(key);
 }
 
+async function saveOtp(tempId, otp) {
+    const key = `auth:otp:${tempId}`;
+    // Store OTP for 5 minutes (300,000 ms)
+    return await setQuery(key, { otp }, new Date(Date.now() + 5 * 60 * 1000));
+}
+
+async function fetchOtp(tempId) {
+    const key = `auth:otp:${tempId}`;
+    const result = await getQuery(key);
+    return result ? result.otp : null;
+}
+
 const cacheService = { 
     saveUser, 
     fetchUser, 
@@ -94,7 +106,9 @@ const cacheService = {
     saveLikes,
     fetchLikes,
     saveViews,
-    fetchViews
+    fetchViews,
+    saveOtp,
+    fetchOtp
 };
 
 export { 
@@ -112,7 +126,9 @@ export {
     saveLikes,
     fetchLikes,
     saveViews,
-    fetchViews
+    fetchViews,
+    saveOtp,
+    fetchOtp
 };
 
 export default cacheService;

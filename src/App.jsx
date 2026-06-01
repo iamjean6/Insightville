@@ -9,6 +9,7 @@ import Layout from './components/layout'
 import ProtectedRoute from './components/ProtectedRoute'
 import About from './components/about'
 import Contact from './components/Contact'
+import Checkout from './pages/Checkout'
 
 const AdminRedirect = () => {
   const { code } = useParams();
@@ -34,6 +35,7 @@ export default function App() {
           <Route path="/app/:code" element={<AdminRedirect />} />
           <Route path="/about" element={<About />} />
           <Route path="/contact" element={<Contact />} />
+          <Route path="/checkout" element={<Checkout />} />
           {/* Admin Routes - Protected */}
           <Route element={<ProtectedRoute />}>
             <Route path="/dashboard" element={<AdminDashboard />} />

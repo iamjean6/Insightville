@@ -24,13 +24,16 @@ import {
     getMedia,
     getBreakingBlogs
 } from "./controllers/blogController.js";
-import { login, register, refresh, logout } from "./controllers/authController.js";
+import { login, register, refresh, logout, verifyOtp } from "./controllers/authController.js";
 import { protect } from "./middleware/authMiddleware.js";
 import { streamTTS } from "./controllers/ttsController.js";
 import { handleViewEvent } from "./controllers/eventController.js";
 import mongoose from "mongoose";
 import { uploadInlineMedia } from "./controllers/mediaController.js";
 import searchRouter from "./routes/search.js";
+import authRouter from "./routes/auth.js";
+import paypalRouter from "./routes/paypal.js";
+import { subscribeToNewsletter } from "./controllers/newsletterController.js";
 import "./workers/viewProcessor.js";
 
 const app = express();
@@ -72,7 +75,9 @@ app.get("/", (req, res) => {
     res.send("Insightville Backend is running");
 });
 // Auth Routes
+app.use("/api/auth", authRouter);
 app.post("/api/auth/login", login);
+app.post("/api/auth/verify-otp", verifyOtp);
 app.post("/api/auth/register", register); // Initially open, can be protected later
 app.post("/api/auth/refresh", refresh);
 app.post("/api/auth/logout", logout);
@@ -98,7 +103,7 @@ app.get("/api/media", protect, getMedia);
 app.post("/api/media/upload", protect, uploadInlineMedia)
 
 app.patch("/api/blogs/:id/like", likeBlog);
-app.post("/api/blogs/:id/comments", postComment);
+app.post("/api/blogs/:id/comments", protect, postComment);
 
 // Protected Comment Routes
 app.delete("/api/comments/:id", protect, deleteComment);
@@ -106,10 +111,16 @@ app.get("/api/comments", getAllComments);
 app.get("/api/blogs/:id/comments", getComments);
 
 // Text to Speech
-app.post("/api/tts", streamTTS);
+app.post("/api/tts", protect, streamTTS);
 
 // Search Route
 app.use("/api", searchRouter);
+
+// Newsletter Route
+app.post("/api/subscribe", subscribeToNewsletter);
+
+// PayPal Routes
+app.use("/api/paypal", paypalRouter);
 
 // Connect to database
 const connectDB = async () => {

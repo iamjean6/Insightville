@@ -1,6 +1,6 @@
 import { useState, useRef, useEffect } from "react"
 import { Link } from "react-router-dom"
-import { Menu, Palette, Check, Sun, Moon, ChevronLeft, ChevronRight } from "lucide-react"
+import { Menu, Palette, Check, Sun, Moon, ChevronLeft, ChevronRight, User } from "lucide-react"
 import Sidebar from "./sidebar"
 import { useTheme } from "../utils/ThemeContext"
 import { useCategory } from "../utils/CategoryContext"
@@ -8,6 +8,7 @@ import { useCategory } from "../utils/CategoryContext"
 export default function Navbar() {
     const [isSidebarOpen, setIsSidebarOpen] = useState(false)
     const [isThemeOpen, setIsThemeOpen] = useState(false)
+    const [isLoginOpen, setIsLoginOpen] = useState(false)
     const { theme: currentTheme, setTheme, isDark, toggleDarkMode } = useTheme()
     const { selectedCategory, setSelectedCategory, selectedSubcategory, setSelectedSubcategory } = useCategory()
 
@@ -116,6 +117,46 @@ export default function Navbar() {
                                                 {currentTheme === t.id && <Check size={14} className="text-primary" />}
                                             </button>
                                         ))}
+                                    </div>
+                                </>
+                            )}
+                        </div>
+
+                        {/* Login Selector */}
+                        <div className="relative">
+                            <button
+                                onClick={() => setIsLoginOpen(!isLoginOpen)}
+                                className="text-muted-foreground hover:text-primary transition-colors p-1 flex items-center gap-1"
+                                aria-label="Login Options"
+                            >
+                                <User size={22} />
+                            </button>
+
+                            {isLoginOpen && (
+                                <>
+                                    <div className="fixed inset-0 z-40" onClick={() => setIsLoginOpen(false)}></div>
+                                    <div className="absolute right-0 mt-2 w-48 bg-card border border-border rounded-lg shadow-xl py-2 z-50 overflow-hidden">
+                                        <div className="px-3 py-1 text-xs font-bold text-muted-foreground uppercase tracking-widest border-b border-border mb-1">
+                                            Sign In To Comment
+                                        </div>
+                                        <button
+                                            onClick={() => {
+                                                window.location.href = "http://localhost:5000/api/auth/google";
+                                            }}
+                                            className="w-full text-left px-4 py-3 text-sm flex items-center gap-3 hover:bg-muted transition-colors text-foreground font-bold"
+                                        >
+                                            <img src="https://www.svgrepo.com/show/475656/google-color.svg" alt="Google" className="w-5 h-5" />
+                                            Login with Google
+                                        </button>
+                                        <button
+                                            onClick={() => {
+                                                window.location.href = "http://localhost:5000/api/auth/facebook";
+                                            }}
+                                            className="w-full text-left px-4 py-3 text-sm flex items-center gap-3 hover:bg-muted transition-colors text-foreground font-bold"
+                                        >
+                                            <img src="https://www.svgrepo.com/show/475647/facebook-color.svg" alt="Facebook" className="w-5 h-5" />
+                                            Login with Facebook
+                                        </button>
                                     </div>
                                 </>
                             )}

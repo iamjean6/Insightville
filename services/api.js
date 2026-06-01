@@ -114,6 +114,16 @@ export const login = async (credentials) => {
     return response.data;
 };
 
+export const verifyOtp = async (data) => {
+    const response = await api.post("/auth/verify-otp", data);
+    if (response.data.success) {
+        localStorage.setItem("token", response.data.token);
+        localStorage.setItem("user", JSON.stringify(response.data.user));
+        api.defaults.headers.common["Authorization"] = `Bearer ${response.data.token}`;
+    }
+    return response.data;
+};
+
 export const register = async (userData) => {
     const response = await api.post("/auth/register", userData);
     return response.data;
@@ -201,8 +211,8 @@ export const getAllComments = async () => {
     return response.data;
 };
 
-export const getBlogComments = async (id) => {
-    const response = await api.get(`/blogs/${id}/comments`);
+export const getBlogComments = async (id, page = 1, limit = 5) => {
+    const response = await api.get(`/blogs/${id}/comments?page=${page}&limit=${limit}`);
     return response.data;
 };
 
@@ -243,3 +253,17 @@ export const fetchResults= async (q) =>{
     const response= await api.get(`/search?q=${q}`)
     return response.data
 }
+
+// ─── Newsletter ────────────────────────────────────────────────────────────────
+export const subscribeToNewsletter = async (email) => {
+    const response = await api.post("/subscribe", { email });
+    return response.data;
+};
+
+// ─── PayPal ────────────────────────────────────────────────────────────────────
+export const createPayPalOrder = async (packageId) => {
+    const response = await api.post("/paypal/create-order", { packageId });
+    return response.data;
+};
+
+export default api;

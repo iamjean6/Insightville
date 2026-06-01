@@ -329,14 +329,16 @@ export const createBlog = async (req, res) => {
 export const getComments = async (req, res) => {
     try {
         const { id } = req.params;
-        const cachedComments = await cache.fetchComments(id);
-        if (cachedComments) {
-            console.log("Comments fetched from cache");
-            return res.status(200).json({ success: true, data: cachedComments });
-        }
-        const comments = await Comment.find({ blogId: id });
-        await cache.saveComments(id, comments);
-        console.log("Comments fetched from database and cached");
+        const page = parseInt(req.query.page) || 1;
+        const limit = parseInt(req.query.limit) || 5;
+        const skip = (page - 1) * limit;
+
+        const comments = await Comment.find({ blogId: id })
+            .populate("userId", "name avatarUrl")
+            .sort({ _id: -1 }) // Newest first
+            .skip(skip)
+            .limit(limit);
+
         return res.status(200).json({ success: true, data: comments });
     } catch (err) {
         console.error("Error fetching comments:", err);
@@ -558,24 +560,21 @@ export const likeBlog = async (req, res) => {
 export const postComment = async (req, res) => {
     try {
         const { id } = req.params;
-        const { comment, authorName } = req.body;
+        const { comment } = req.body;
 
         if (!comment) {
             return res.status(400).json({ success: false, message: "Comment content is required" });
         }
 
-        // Since we don't have a full User model yet, we'll store the authorName or a placeholder
-        // and bypass the strict userId requirement if necessary, or just use a dummy ID.
-        // For now, let's create a comment with the provided blogId.
         const newComment = await Comment.create({
             blogId: id,
             comment: comment,
-            // Temporary measure: use a dummy ObjectId if userId is required and not provided
-            userId: req.body.userId || new mongoose.Types.ObjectId()
+            userId: req.user._id 
         });
 
-        await cache.invalidateCommentsCache(id);
-        return res.status(201).json({ success: true, data: newComment });
+        const populatedComment = await Comment.findById(newComment._id).populate("userId", "name avatarUrl");
+
+        return res.status(201).json({ success: true, data: populatedComment });
     } catch (err) {
         console.error("Error posting comment:", err);
         return res.status(500).json({ success: false, message: err.message });
