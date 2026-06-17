@@ -12,6 +12,15 @@ node_modules
 .env
 .env.*
 backend/.env
+AI/app/.env
+AI/app/.env.*
+
+# Python AI backend
+AI/app/venv/
+AI/app/__pycache__/
+AI/app/**/__pycache__/
+AI/app/**/*.pyc
+AI/app/test_ws.py
 Backend/utils/parseContent.test.js
 Backend/register_admin.js
 Backend/register_log.txt
@@ -20,10 +29,6 @@ Backend/test-redis-6380.js
 Backend/register_admin.js
 Backend/test-redis.js
 Backend/final_register.js
-AI/
-public/pcm-player-processor.js
-public/pcm-recorder-processor.js
-src/components/AICoAuthorPanel.jsx
 
 dist
 dist-ssr

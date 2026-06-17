@@ -35,7 +35,7 @@ export default function About() {
                         <div className='absolute -inset-4 bg-primary/10 rounded-[3rem] blur-2xl group-hover:bg-primary/20 transition-all'></div>
                         <div className='relative rounded-[2.5rem] overflow-hidden border-8 border-card shadow-2xl'>
                             <img
-                                src="/img/Aboutus.jpg"
+                                src="/img/about.jpg"
                                 alt="Insightville Newsroom"
                                 className='w-full h-full object-cover transform transition-transform group-hover:scale-105 duration-700'
                             />

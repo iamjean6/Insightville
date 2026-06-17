@@ -1,0 +1,22 @@
+# Core web framework
+fastapi==0.118.0
+uvicorn[standard]==0.37.0
+starlette==0.48.0
+python-multipart==0.0.20
+
+# Google ADK & Gemini
+google-adk==1.17.0
+google-genai==1.46.0
+
+# Google Cloud (Vertex AI auth + APIs)
+google-cloud-aiplatform==1.122.0
+google-auth==2.32.0
+google-api-core==2.27.0
+
+# Environment & config
+python-dotenv==1.1.1
+
+# Async / HTTP utilities
+httpx==0.28.1
+anyio==4.11.0
+websockets==15.0.1
