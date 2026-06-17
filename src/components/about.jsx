@@ -8,15 +8,15 @@ export default function About() {
                 <div className='grid grid-cols-1 md:grid-cols-2 gap-12 items-center'>
                     <div className='space-y-8 animate-in fade-in slide-in-from-left duration-700'>
                         <div className='space-y-4'>
-                            <p className='text-primary font-bold uppercase tracking-widest text-sm font-changa'>Empowering Information</p>
+                            <p className='text-primary font-bold uppercase tracking-widest text-sm font-changa'>Empowering Thought</p>
                             <h1 className='text-5xl md:text-7xl font-bold font-vend leading-tight text-foreground'>
-                                Elevating <span className='text-primary underline decoration-primary/30 underline-offset-8'>Digital</span> Journalism
+                                Elevating <span className='text-primary underline decoration-primary/30 underline-offset-8'>Digital</span> Insight
                             </h1>
                             <div className='w-24 h-2 bg-primary rounded-full'></div>
                         </div>
 
                         <p className='text-xl md:text-2xl text-muted-foreground leading-relaxed font-vend'>
-                            Insightville is a digital news platform delivering timely, accurate, and in-depth coverage across a wide spectrum of topics. We deliver credible journalism that informs, educates, and drives conversation.
+                            Rizzen is a cutting-edge blogging platform designed to give thought on various topics in my life and share my inisghts with the world. With a sleek and user-friendly interface, Rizzen allows me to easily create and publish engaging content that resonates with my audience. Whether it's sharing personal experiences, offering advice, or discussing current events, Rizzen provides the perfect platform for me to connect with readers and build a community around my ideas.
                         </p>
 
                         <div className='grid grid-cols-2 gap-8 pt-4'>
@@ -48,11 +48,11 @@ export default function About() {
             <div className='bg-muted/30 py-20'>
                 <div className='max-w-7xl mx-auto px-4 sm:px-6 lg:px-8'>
                     <div className='max-w-3xl'>
-                        <h2 className='text-3xl font-bold font-vend mb-8 text-foreground'>Our Core Mission</h2>
+                        <h2 className='text-3xl font-bold font-vend mb-8 text-foreground'>My Core Mission</h2>
                         <p className='text-lg leading-relaxed text-muted-foreground font-vend'>
-                            At Insightville, we believe journalism is more than just reporting—it's about driving conversation,
-                            educating the public, and uncovering truths that matter. We strive to create a space
-                            where credible journalism serves as the foundation for an informed and empowered society.
+                            My core mission is to provide a platform for sharing my thoughts, experiences, and insights on various topics in my life. I aim to create a space where I can connect with others, inspire meaningful conversations, and foster a sense of community.
+                            Through my writing, I hope to offer valuable perspectives, encourage personal growth, and contribute to a more informed and engaged audience. Ultimately, my goal is to make a positive impact by sharing my unique voice and fostering connections with 
+                            readers around the world.
                         </p>
                     </div>
                 </div>

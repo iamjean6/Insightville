@@ -20,7 +20,7 @@ export const getBlogs = async (req, res) => {
         const limit = parseInt(req.query.limit) || 0; // 0 means no limit by default to ensure frontend doesn't break
         const skip = (page - 1) * limit;
         
-        const blogs = await Blog.find().select('-content').sort({ date: -1 }).skip(skip).limit(limit);
+        const blogs = await Blog.find({ status: 'published' }).select('-content').sort({ date: -1 }).skip(skip).limit(limit);
         await cache.saveBlog(blogs);
         console.log("Blogs fetched from database and cached");
         return res.status(200).json({ success: true, data: blogs });
@@ -589,6 +589,7 @@ export const getPopularBlogs = async (req, res) => {
 
         if (distinctCategory === 'true') {
             blogs = await Blog.aggregate([
+                { $match: { status: 'published' } },
                 { $sort: { views: -1, likes: -1 } },
                 {
                     $group: {
@@ -602,7 +603,7 @@ export const getPopularBlogs = async (req, res) => {
                 { $project: { content: 0 } }
             ]);
         } else {
-            blogs = await Blog.find().select('-content').sort({ views: -1, likes: -1 }).limit(5);
+            blogs = await Blog.find({ status: 'published' }).select('-content').sort({ views: -1, likes: -1 }).limit(5);
         }
 
         console.log(`Found ${blogs.length} popular blogs`);
@@ -625,6 +626,7 @@ export const getRelatedBlogs = async (req, res) => {
 
         console.log(`Current blog category: ${currentBlog.category}`);
         const relatedBlogs = await Blog.find({
+            status: 'published',
             category: currentBlog.category,
             _id: { $ne: id }
         }).select('-content').limit(4);
@@ -639,7 +641,7 @@ export const getRelatedBlogs = async (req, res) => {
 
 export const getLatestBlogs = async (req, res) => {
     try {
-        const blogs = await Blog.find().select('-content').sort({ date: -1 }).limit(10);
+        const blogs = await Blog.find({ status: 'published' }).select('-content').sort({ date: -1 }).limit(10);
         return res.status(200).json({ success: true, data: blogs })
     } catch (err) {
         console.error("Error fetching latest blogs:", err);
@@ -650,7 +652,7 @@ export const getBlogCategory = async (req, res) => {
     try {
         const { category } = req.params;
         const { subcategory } = req.query;
-        let query = { category: category };
+        let query = { category: category, status: 'published' };
         if (subcategory) {
             query.subcategory = subcategory;
         }
@@ -668,7 +670,7 @@ export const getBlogCategory = async (req, res) => {
 
 export const getMedia = async (req, res) => {
     try {
-        const blogs = await Blog.find({}, 'image videoUrl title author date category');
+        const blogs = await Blog.find({ status: 'published' }, 'image videoUrl title author date category');
         res.status(200).json({ success: true, data: blogs });
     } catch (err) {
         console.error("Error fetching media:", err);
@@ -678,10 +680,68 @@ export const getMedia = async (req, res) => {
 
 export const getBreakingBlogs = async (req, res) => {
     try {
-        const blogs = await Blog.find({ breaking: true }).select('-content').sort({ date: -1 }).limit(10);
+        const blogs = await Blog.find({ breaking: true, status: 'published' }).select('-content').sort({ date: -1 }).limit(10);
         return res.status(200).json({ success: true, data: blogs });
     } catch (err) {
         console.error("Error fetching breaking blogs:", err);
         return res.status(500).json({ success: false, message: err.message });
     }
 }
+
+export const saveDraft = async (req, res) => {
+    try {
+        const { id, title, excerpt, content, category, subcategory, author, quote, featured, editorsPick, breaking, videoUrl } = req.body;
+
+        const draftData = {
+            title: title || 'Untitled Draft',
+            excerpt: excerpt || '',
+            content: content || '',
+            category: category || 'Faith',
+            subcategory: subcategory || '',
+            author: author || '',
+            quote: quote || '',
+            featured: featured === 'true' || featured === true,
+            editorsPick: editorsPick === 'true' || editorsPick === true,
+            breaking: breaking === 'true' || breaking === true,
+            videoUrl: videoUrl || '',
+            status: 'draft',
+            image: { webp: '', jpeg: '', avif: '' },
+            date: new Date()
+        };
+
+        let draft;
+        if (id) {
+            // Update existing draft — skip validators since drafts don't need all fields
+            draft = await Blog.findOneAndUpdate(
+                { _id: id, status: 'draft' },
+                draftData,
+                { new: true, runValidators: false }
+            );
+            if (!draft) {
+                return res.status(404).json({ success: false, message: 'Draft not found' });
+            }
+        } else {
+            // Create new draft — bypass schema required validators
+            const newDraft = new Blog(draftData);
+            draft = await newDraft.save({ validateBeforeSave: false });
+        }
+
+        return res.status(200).json({ success: true, data: draft });
+    } catch (err) {
+        console.error('Error saving draft:', err);
+        return res.status(500).json({ success: false, message: err.message });
+    }
+};
+
+
+export const getDrafts = async (req, res) => {
+    try {
+        const drafts = await Blog.find({ status: 'draft' })
+            .select('title excerpt content category author date updatedAt')
+            .sort({ date: -1 });
+        return res.status(200).json({ success: true, data: drafts });
+    } catch (err) {
+        console.error('Error fetching drafts:', err);
+        return res.status(500).json({ success: false, message: err.message });
+    }
+};

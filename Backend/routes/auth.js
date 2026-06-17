@@ -16,6 +16,18 @@ router.get('/google/callback',
                 sameSite: 'Lax',
                 maxAge: 30 * 24 * 60 * 60 * 1000 // 30 days
             });
+            // Set a readable cookie for frontend state so it knows who logged in
+            res.cookie('google_user', JSON.stringify({
+                _id: req.user.user._id,
+                name: req.user.user.name,
+                role: req.user.user.role,
+                avatarUrl: req.user.user.avatarUrl,
+                credits: req.user.user.credits
+            }), {
+                secure: process.env.NODE_ENV === 'production',
+                sameSite: 'Lax',
+                maxAge: 30 * 24 * 60 * 60 * 1000 // 30 days
+            });
             res.redirect(process.env.CLIENT_ORIGIN || 'http://localhost:5173');
         } catch (error) {
             console.error('Error logging in', error);

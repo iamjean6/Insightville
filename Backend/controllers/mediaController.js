@@ -122,10 +122,10 @@ const gifKey = `inline-gif/${mediaId}.gif`
 const gifUpload= await putObject(media.data,gifKey,media.mimetype)
 
 return res.status(200).json({
-    sucess:true,
-    type:"gif",
-    urls:{
-        url:gifUpload.url
+    success: true,
+    type: "gif",
+    urls: {
+        url: gifUpload.url
     }
 })
 }

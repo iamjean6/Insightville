@@ -25,6 +25,27 @@ const AdminRedirect = () => {
 }
 
 export default function App() {
+  useEffect(() => {
+    // Check if there is a 'google_user' cookie set by backend Google login
+    const userCookieMatch = document.cookie.match(new RegExp('(^| )google_user=([^;]+)'));
+    if (userCookieMatch) {
+      try {
+        const userDataStr = decodeURIComponent(userCookieMatch[2]);
+        const userData = JSON.parse(userDataStr);
+        // Important: we don't have the token here (it's httpOnly).
+        // Storing this without a 'token' field ensures api.js interceptor 
+        // stops sending the old Admin token via Authorization header.
+        localStorage.setItem('user', JSON.stringify(userData));
+        // Remove old standalone token if it exists
+        localStorage.removeItem('token');
+        // Delete the cookie after reading so we don't keep triggering this
+        document.cookie = 'google_user=; Max-Age=-99999999; path=/';
+      } catch (err) {
+        console.error("Failed to parse google_user cookie", err);
+      }
+    }
+  }, []);
+
   return (
     <BrowserRouter>
       <Routes>

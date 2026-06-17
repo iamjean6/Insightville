@@ -84,6 +84,11 @@ const BlogSchema = new mongoose.Schema({
     breaking: {
         type: Boolean,
         default: false
+    },
+    status: {
+        type: String,
+        enum: ['draft', 'published'],
+        default: 'published'
     }
 })
 
@@ -91,6 +96,7 @@ const BlogSchema = new mongoose.Schema({
 BlogSchema.index({ date: -1 });
 BlogSchema.index({ category: 1 });
 BlogSchema.index({ breaking: 1 });
+BlogSchema.index({ status: 1 });
 BlogSchema.index({ views: -1 });
 BlogSchema.index({ likes: -1 });
 

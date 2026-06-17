@@ -237,11 +237,8 @@ export default function Article() {
             }
             
             const user = JSON.parse(userStr);
-            if (user.credits <= 0) {
-                enqueueSnackbar("You are out of audio credits!", { variant: "warning" });
-                navigate("/checkout");
-                return;
-            }
+            // We removed the frontend localStorage check for credits here because it goes stale.
+            // The backend TTS endpoint accurately checks the database and returns 402 if empty.
 
             const contentText = Array.isArray(article.content)
             ? article.content

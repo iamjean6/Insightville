@@ -34,7 +34,7 @@ const UserSchema = new mongoose.Schema({
     },
     credits: {
         type: Number,
-        default: 1
+        default: 6
     }
 }, { timestamps: true });
 

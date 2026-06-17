@@ -13,12 +13,16 @@ export const streamTTS = async (req, res) => {
     const userId = req.user._id; 
     const { text, voiceId = "JBFqnCBsd6RMkjVDRZzb" } = req.body; 
 
+    console.log(`[TTS] Request received. UserID: ${userId}, Text length: ${text?.length}`);
+
     if (!text) {
         return res.status(400).json({ success: false, message: "Text is required" });
     }
 
     try {
         const user = await User.findById(userId);
+        console.log(`[TTS] User verified.for user:${user} Current credits: ${user?.credits}`);
+        
         if (!user || user.credits <= 0) {
             return res.status(402).json({ success: false, message: "Insufficient credits. Please purchase more." });
         }
@@ -51,9 +55,11 @@ export const streamTTS = async (req, res) => {
         // 4. Fallback to ElevenLabs (Cache Miss)
         const API_KEY = process.env.ELEVENLABS_API_KEY;
         if (!API_KEY) {
+            console.error("[TTS] ElevenLabs API Key not configured");
             return res.status(500).json({ success: false, message: "ElevenLabs API Key not configured" });
         }
 
+        console.log("[TTS] Sending request to ElevenLabs API...");
         const response = await axios({
             method: "post",
             url: `https://api.elevenlabs.io/v1/text-to-speech/${voiceId}`,
@@ -70,6 +76,7 @@ export const streamTTS = async (req, res) => {
             responseType: "arraybuffer", // Buffer it in memory so we can upload it
         });
 
+        console.log("[TTS] ElevenLabs request successful. Deducting credit...");
         // Deduct credit since generation succeeded
         await User.findByIdAndUpdate(userId, { $inc: { credits: -1 } });
 
@@ -80,6 +87,7 @@ export const streamTTS = async (req, res) => {
         res.end(audioBuffer);
 
         // Upload to S3 in the background using their existing putObject utility
+        console.log("[TTS] Initiating background S3 upload for caching...");
         putObject(audioBuffer, fileName, "audio/mpeg").catch(err => {
             console.error("[TTS] Background S3 Upload failed:", err);
         });

@@ -162,6 +162,16 @@ export const updateBlog = async (id, blogData) => {
     return response.data;
 };
 
+export const saveDraft = async (draftData) => {
+    const response = await api.post('/blogs/draft', draftData);
+    return response.data;
+};
+
+export const getDrafts = async () => {
+    const response = await api.get('/blogs/drafts');
+    return response.data;
+};
+
 export const deleteBlog = async (id) => {
     const response = await api.delete(`/blogs/${id}`);
     return response.data;

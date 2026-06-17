@@ -1,9 +1,10 @@
 import React, { useState, useRef } from 'react';
 import { Save, Image as ImageIcon, X, Send, Eye, Type, Tag, ChevronLeft, Upload, FileVideo, CheckCircle2, User, Zap, Star } from 'lucide-react';
 import { Link, useNavigate, useParams } from 'react-router-dom';
-import { createBlog, updateBlog, getOneBlog, uploadInlineMedia } from '../../services/api';
+import { createBlog, updateBlog, getOneBlog, uploadInlineMedia, saveDraft, getDrafts } from '../../services/api';
 import { useSnackbar } from 'notistack';
-import { useEffect } from 'react';
+import { useEffect, useCallback } from 'react';
+import AICoAuthorPanel from '../components/AICoAuthorPanel';
 
 export default function ArticleEditor() {
   const navigate = useNavigate();
@@ -17,6 +18,10 @@ export default function ArticleEditor() {
   const inlineImageRef = useRef(null)
   const inlineVideoRef = useRef(null)
   const contentRef = useRef(null);
+  const autoSaveTimer = useRef(null);
+
+  const [draftId, setDraftId] = useState(null);
+  const [isSavingDraft, setIsSavingDraft] = useState(false);
 
   const [dragActive, setDragActive] = useState(false);
   const [authorDragActive, setAuthorDragActive] = useState(false);
@@ -27,6 +32,45 @@ const [uploadingVideo, setUploadingVideo] = useState(false);
   const [preview, setPreview] = useState(null);
   const [authorPreview, setAuthorPreview] = useState(null);
   const [videoPreview, setVideoPreview] = useState(null);
+
+  const [isDraftModalOpen, setIsDraftModalOpen] = useState(false);
+  const [draftsList, setDraftsList] = useState([]);
+  const [isLoadingDrafts, setIsLoadingDrafts] = useState(false);
+
+  const openDraftsModal = async () => {
+    setIsDraftModalOpen(true);
+    setIsLoadingDrafts(true);
+    try {
+      const res = await getDrafts();
+      if (res.success) {
+        setDraftsList(res.data || []);
+      }
+    } catch (err) {
+      enqueueSnackbar('Failed to fetch drafts', { variant: 'error' });
+    } finally {
+      setIsLoadingDrafts(false);
+    }
+  };
+
+  const loadDraft = (draft) => {
+    setDraftId(draft._id);
+    setFormData({
+      title: draft.title || '',
+      excerpt: draft.excerpt || '',
+      category: draft.category || 'Basketball',
+      subcategory: draft.subcategory || '',
+      author: draft.author || '',
+      content: draft.content || '',
+      tags: draft.tags || '',
+      featured: draft.featured || false,
+      editorsPick: draft.editorsPick || false,
+      breaking: draft.breaking || false,
+      quote: draft.quote || '',
+      videoUrl: draft.videoUrl || ''
+    });
+    setIsDraftModalOpen(false);
+    enqueueSnackbar('Draft loaded successfully', { variant: 'success' });
+  };
 
   const [files, setFiles] = useState({
     coverImg: null,
@@ -54,12 +98,15 @@ const [uploadingVideo, setUploadingVideo] = useState(false);
     "Sports": [ "Football", "Basketball", "Gym", "World Cup", "NBA Finals"],
   };
 
-  // Load draft from local storage on mount
+  // Load draft on mount — localStorage as fallback
   useEffect(() => {
     if (!isEditing) {
+      // Fallback: restore from localStorage
       const savedDraft = localStorage.getItem('article_draft');
       if (savedDraft) {
-        setFormData(JSON.parse(savedDraft));
+        try {
+          setFormData(JSON.parse(savedDraft));
+        } catch (_) {}
       }
     } else {
       // Fetch blog data for editing
@@ -108,6 +155,33 @@ const [uploadingVideo, setUploadingVideo] = useState(false);
       localStorage.setItem('article_draft', JSON.stringify(formData));
     }
   }, [formData, isEditing]);
+
+  // Auto-save draft to DB (debounced — 3s after user stops typing)
+  const autoSaveDraft = useCallback(async (data, currentDraftId) => {
+    if (isEditing) return; // Don't auto-save when editing a published post
+    try {
+      setIsSavingDraft(true);
+      const payload = { ...data, id: currentDraftId || undefined };
+      const res = await saveDraft(payload);
+      if (res.success && res.data?._id && !currentDraftId) {
+        setDraftId(res.data._id);
+      }
+    } catch (err) {
+      // Silent fail — localStorage is the backup
+      console.warn('Draft auto-save failed:', err.message);
+    } finally {
+      setIsSavingDraft(false);
+    }
+  }, [isEditing]);
+
+  useEffect(() => {
+    if (isEditing) return;
+    if (autoSaveTimer.current) clearTimeout(autoSaveTimer.current);
+    autoSaveTimer.current = setTimeout(() => {
+      autoSaveDraft(formData, draftId);
+    }, 3000);
+    return () => clearTimeout(autoSaveTimer.current);
+  }, [formData, draftId, isEditing, autoSaveDraft]);
 
   const handleChange = (e) => {
     const { name, value, type, checked } = e.target;
@@ -264,7 +338,7 @@ const handleInlineImageUpload = async (file) => {
       return;
     }
 
-    const url = result.urls?.webp;
+    const url = result.urls?.webp || result.urls?.url;
     if (!url) throw new Error("No image URL returned");
 
     insertAtCursor(`![image](${url})`);
@@ -319,6 +393,20 @@ const handleEmbedInsert = () => {
             <h1 className="text-xl font-bold font-righteous uppercase tracking-wider">{isEditing ? 'Edit Article' : 'New Article'}</h1>
           </div>
           <div className="flex items-center gap-3">
+            {!isEditing && (
+              <span className="text-xs text-muted-foreground font-medium">
+                {isSavingDraft ? 'Saving draft...' : draftId ? '✓ Draft saved' : ''}
+              </span>
+            )}
+            {!isEditing && (
+              <button
+                onClick={openDraftsModal}
+                type="button"
+                className="flex items-center gap-2 bg-secondary text-secondary-foreground px-4 py-2 rounded-full font-bold transition-all shadow-sm border border-border hover:bg-muted"
+              >
+                Drafts
+              </button>
+            )}
             <button
               onClick={() => handleSubmit()}
               disabled={isPublishing}
@@ -695,6 +783,44 @@ const handleEmbedInsert = () => {
           </div>
         </form>
       </main>
+
+      {/* AI Co-Author integration */}
+      <AICoAuthorPanel draftContent={formData.content} />
+
+      {/* Drafts Modal */}
+      {isDraftModalOpen && (
+        <div className="fixed inset-0 bg-black/80 backdrop-blur-sm z-[100] flex items-center justify-center p-4">
+          <div className="bg-card border border-border p-6 rounded-3xl shadow-2xl max-w-md w-full max-h-[80vh] flex flex-col">
+            <div className="flex justify-between items-center mb-4">
+              <h3 className="text-xl font-righteous uppercase">Select Draft</h3>
+              <button onClick={() => setIsDraftModalOpen(false)} className="p-1 hover:bg-muted rounded-full transition-colors">
+                <X size={20} />
+              </button>
+            </div>
+            
+            <div className="flex-1 overflow-y-auto pr-2 space-y-3">
+              {isLoadingDrafts ? (
+                <div className="text-center p-4 text-muted-foreground animate-pulse">Loading drafts...</div>
+              ) : draftsList.length === 0 ? (
+                <div className="text-center p-4 text-muted-foreground">No drafts found.</div>
+              ) : (
+                draftsList.map(draft => (
+                  <div 
+                    key={draft._id} 
+                    onClick={() => loadDraft(draft)}
+                    className="p-4 border border-border rounded-xl hover:bg-muted/50 cursor-pointer transition-colors"
+                  >
+                    <h4 className="font-bold text-sm mb-1 truncate">{draft.title || 'Untitled'}</h4>
+                    <p className="text-[10px] text-muted-foreground uppercase font-bold">
+                      {new Date(draft.updatedAt || draft.date).toLocaleDateString()} • {draft.category}
+                    </p>
+                  </div>
+                ))
+              )}
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }

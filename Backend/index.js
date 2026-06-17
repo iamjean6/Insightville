@@ -22,7 +22,9 @@ import {
     getLatestBlogs,
     getBlogCategory,
     getMedia,
-    getBreakingBlogs
+    getBreakingBlogs,
+    saveDraft,
+    getDrafts
 } from "./controllers/blogController.js";
 import { login, register, refresh, logout, verifyOtp } from "./controllers/authController.js";
 import { protect } from "./middleware/authMiddleware.js";
@@ -88,6 +90,11 @@ app.get("/api/blogs/popular", getPopularBlogs);
 app.get("/api/blogs/latest", getLatestBlogs);
 app.get("/api/blogs/breaking", getBreakingBlogs);
 app.get("/api/blogs/category/:category", getBlogCategory);
+
+// Draft Routes
+app.post("/api/blogs/draft", protect, saveDraft);
+app.get("/api/blogs/drafts", protect, getDrafts);
+
 app.get("/api/blogs/:id", getOneBlog);
 app.get("/api/blogs/:id/related", getRelatedBlogs);
 
@@ -101,6 +108,8 @@ app.delete("/api/blogs/:id", protect, deleteBlog);
 app.patch("/api/blogs/:id/status", protect, updateBlogStatus);
 app.get("/api/media", protect, getMedia);
 app.post("/api/media/upload", protect, uploadInlineMedia)
+
+
 
 app.patch("/api/blogs/:id/like", likeBlog);
 app.post("/api/blogs/:id/comments", protect, postComment);

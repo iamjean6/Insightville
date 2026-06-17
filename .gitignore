@@ -20,6 +20,11 @@ Backend/test-redis-6380.js
 Backend/register_admin.js
 Backend/test-redis.js
 Backend/final_register.js
+AI/
+public/pcm-player-processor.js
+public/pcm-recorder-processor.js
+src/components/AICoAuthorPanel.jsx
+
 dist
 dist-ssr
 *.local
