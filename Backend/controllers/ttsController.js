@@ -9,7 +9,9 @@ import { putObject } from "../utils/putObject.js";
 import User from "../model/userModel.js";
 
 // Reuse a single client instance across requests (avoids repeated auth overhead)
-const ttsClient = new TextToSpeechClient();
+const ttsClient = process.env.GOOGLE_APPLICATION_CREDENTIALS_JSON
+    ? new TextToSpeechClient({ credentials: JSON.parse(process.env.GOOGLE_APPLICATION_CREDENTIALS_JSON) })
+    : new TextToSpeechClient();
 
 export const streamTTS = async (req, res) => {
     // 1. Verify User and Credits
