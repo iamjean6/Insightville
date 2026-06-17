@@ -12,6 +12,7 @@ node_modules
 .env
 .env.*
 backend/.env
+Backend/.env
 AI/app/.env
 AI/app/.env.*
 
