@@ -1,6 +1,6 @@
 import 'dotenv/config';
 import { createClient } from "redis";
-const url = process.env.REDIS_URL || `redis://${password}${host}:${port}`;
+const url = process.env.REDIS_URL || `redis://${process.env.REDIS_PASSWORD}@${process.env.REDIS_HOST}:${process.env.REDIS_PORT}`;
 
  export const client = createClient({
     url: url,
