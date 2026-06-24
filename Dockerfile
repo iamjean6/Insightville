@@ -1,5 +1,4 @@
-# Stage 1: Build the React frontend
-FROM node:20-alpine AS frontend-build
+FROM node:20-alpine
 
 WORKDIR /app
 
@@ -9,12 +8,9 @@ RUN npm install
 COPY . .
 RUN npm run build
 
-# Stage 2: Serve with nginx
-FROM nginx:alpine
-
-COPY --from=frontend-build /app/dist /usr/share/nginx/html
-COPY nginx.conf /etc/nginx/conf.d/default.conf
+# Install a simple static file server to serve the build
+RUN npm install -g serve
 
 EXPOSE 80
 
-CMD ["nginx", "-g", "daemon off;"]
+CMD ["serve", "-s", "dist", "-l", "80"]
