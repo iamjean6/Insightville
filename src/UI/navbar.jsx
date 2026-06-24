@@ -141,7 +141,8 @@ export default function Navbar() {
                                         </div>
                                         <button
                                             onClick={() => {
-                                                window.location.href = "http://localhost:5000/api/auth/google";
+                                                const apiUrl = import.meta.env.VITE_API_URL || "/api";
+                                                window.location.href = `${apiUrl}/auth/google`;
                                             }}
                                             className="w-full text-left px-4 py-3 text-sm flex items-center gap-3 hover:bg-muted transition-colors text-foreground font-bold"
                                         >
@@ -150,7 +151,8 @@ export default function Navbar() {
                                         </button>
                                         <button
                                             onClick={() => {
-                                                window.location.href = "http://localhost:5000/api/auth/facebook";
+                                                const apiUrl = import.meta.env.VITE_API_URL || "/api";
+                                                window.location.href = `${apiUrl}/auth/facebook`;
                                             }}
                                             className="w-full text-left px-4 py-3 text-sm flex items-center gap-3 hover:bg-muted transition-colors text-foreground font-bold"
                                         >
