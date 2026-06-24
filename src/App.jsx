@@ -26,22 +26,26 @@ const AdminRedirect = () => {
 
 export default function App() {
   useEffect(() => {
-    // Check if there is a 'google_user' cookie set by backend Google login
-    const userCookieMatch = document.cookie.match(new RegExp('(^| )google_user=([^;]+)'));
-    if (userCookieMatch) {
+    // Check if there is a 'google_user' in the URL query string (from backend OAuth redirect)
+    const urlParams = new URLSearchParams(window.location.search);
+    const googleUserParam = urlParams.get('google_user');
+    
+    if (googleUserParam) {
       try {
-        const userDataStr = decodeURIComponent(userCookieMatch[2]);
-        const userData = JSON.parse(userDataStr);
+        const userData = JSON.parse(googleUserParam);
         // Important: we don't have the token here (it's httpOnly).
         // Storing this without a 'token' field ensures api.js interceptor 
         // stops sending the old Admin token via Authorization header.
         localStorage.setItem('user', JSON.stringify(userData));
         // Remove old standalone token if it exists
         localStorage.removeItem('token');
-        // Delete the cookie after reading so we don't keep triggering this
-        document.cookie = 'google_user=; Max-Age=-99999999; path=/';
+        
+        // Remove the parameter from the URL to clean it up
+        urlParams.delete('google_user');
+        const newUrl = window.location.pathname + (urlParams.toString() ? '?' + urlParams.toString() : '');
+        window.history.replaceState({}, document.title, newUrl);
       } catch (err) {
-        console.error("Failed to parse google_user cookie", err);
+        console.error("Failed to parse google_user from URL", err);
       }
     }
   }, []);
