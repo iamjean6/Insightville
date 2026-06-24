@@ -74,15 +74,30 @@ const Checkout = () => {
 
                 <div className="w-full max-w-md bg-card p-6 rounded-2xl border border-border shadow-xl">
                     <h4 className="text-lg font-bold text-foreground mb-6 text-center">Complete your purchase securely</h4>
-                    <PayPalButtons 
-                        style={{ layout: "vertical", shape: "pill" }}
-                        createOrder={handleCreateOrder}
-                        onApprove={handleApprove}
-                        onError={(err) => {
-                            console.error("PayPal Error:", err);
-                            enqueueSnackbar("Something went wrong with PayPal.", { variant: "error" });
-                        }}
-                    />
+                    {localStorage.getItem('user') ? (
+                        <PayPalButtons 
+                            style={{ layout: "vertical", shape: "pill" }}
+                            createOrder={handleCreateOrder}
+                            onApprove={handleApprove}
+                            onError={(err) => {
+                                console.error("PayPal Error:", err);
+                                enqueueSnackbar("Something went wrong with PayPal.", { variant: "error" });
+                            }}
+                        />
+                    ) : (
+                        <div className="text-center">
+                            <p className="text-muted-foreground mb-4 font-medium">You must be logged in to purchase credits.</p>
+                            <button
+                                onClick={() => {
+                                    const apiUrl = import.meta.env.VITE_API_URL || "/api";
+                                    window.location.href = `${apiUrl}/auth/google`;
+                                }}
+                                className="w-full bg-primary text-primary-foreground font-bold py-3 rounded-full hover:bg-primary/90 transition-colors shadow-lg"
+                            >
+                                Login with Google
+                            </button>
+                        </div>
+                    )}
                 </div>
             </div>
         </PayPalScriptProvider>
