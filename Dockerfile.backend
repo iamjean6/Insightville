@@ -1,0 +1,23 @@
+# Backend Dockerfile - Node.js Express API
+FROM node:20-alpine
+
+WORKDIR /app
+
+# Copy package files
+COPY Backend/package*.json ./
+
+# Install production dependencies
+RUN npm install --production
+
+# Copy backend source code
+COPY Backend/ .
+
+# Expose the port
+EXPOSE 5000
+
+# Set environment
+ENV NODE_ENV=production
+
+# Start the application
+CMD ["node", "index.js"]
+
