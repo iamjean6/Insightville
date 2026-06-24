@@ -1,8 +1,3 @@
-# DEPRECATED: This Dockerfile is no longer used in production.
-# The backend is now built and run as part of the root Dockerfile,
-# which uses supervisord to manage both nginx and Node.js in a single container.
-# This file is kept for reference only.
-
 # Use an official Node.js runtime as a parent image
 FROM node:20-alpine
 
@@ -15,17 +10,15 @@ COPY package*.json ./
 # Install dependencies
 RUN npm install --production
 
-# Force port 5000 for internal networking
-ENV PORT=80
-
-# Copy the rest of the application code
-COPY . .
-
 # Expose the port the app runs on
-EXPOSE 80
+EXPOSE 5000
 
 # Set environment variables for production
 ENV NODE_ENV=production
+ENV PORT=5000
+
+# Copy the rest of the application code
+COPY . .
 
 # Define the command to run the app
 CMD ["node", "index.js"]
