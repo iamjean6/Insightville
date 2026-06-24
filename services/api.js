@@ -80,9 +80,9 @@ api.interceptors.response.use(
                 processQueue(refreshError, null);
                 localStorage.removeItem("token");
                 localStorage.removeItem("user");
-                // Redirect to login if in a browser context
+                // Redirect to homepage if in a browser context
                 if (typeof window !== "undefined") {
-                    window.location.href = "/login";
+                    window.location.href = "/";
                 }
                 return Promise.reject(refreshError);
             } finally {
