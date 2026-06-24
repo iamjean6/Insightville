@@ -29,8 +29,9 @@ const UserSchema = new mongoose.Schema({
         enum: ["admin", "user"],
         default: "user"
     },
-    refreshToken:{
-        type: String
+    refreshToken: {
+        type: [String],
+        default: []
     },
     credits: {
         type: Number,

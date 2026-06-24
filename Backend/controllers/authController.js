@@ -104,7 +104,7 @@ export const verifyOtp = async (req, res) => {
         // OTP is valid, generate tokens
         const accessToken = generateToken(user._id);
         const refreshToken = generateRefreshToken(user._id);
-        user.refreshToken = refreshToken;
+        user.refreshToken.push(refreshToken);
         await user.save();
         
         sendRefreshToken(res, refreshToken);
@@ -147,7 +147,7 @@ export const register = async (req, res) => {
         const accessToken = generateToken(newUser);
         const refreshToken = generateRefreshToken(newUser);
         
-        newUser.refreshToken = refreshToken;
+        newUser.refreshToken.push(refreshToken);
         await newUser.save();
 
         sendRefreshToken(res, refreshToken);
@@ -175,13 +175,16 @@ export const refresh = async (req, res) => {
         const decoded = jwt.verify(token, REFRESH_SECRET);
         const user = await User.findById(decoded.id );
 
-        if (!user || user.refreshToken !== token) {
+        if (!user || !user.refreshToken.includes(token)) {
             return res.status(403).json({ message: "Invalid refresh token" });
         }
 
         const AccessToken = generateToken(user._id);
         const newRefreshToken = generateRefreshToken(user._id);
-        user.refreshToken = newRefreshToken;
+        
+        // Remove the old token and add the new one
+        user.refreshToken = user.refreshToken.filter(rt => rt !== token);
+        user.refreshToken.push(newRefreshToken);
         await user.save();
         
         sendRefreshToken(res, newRefreshToken);
@@ -196,7 +199,8 @@ export const logout = async (req, res) => {
     if (token) {
         const user = await User.findOne({ refreshToken: token });
         if (user) {
-            user.refreshToken = null;
+            // Remove only this specific device's token
+            user.refreshToken = user.refreshToken.filter(rt => rt !== token);
             await user.save();
         }
     }
