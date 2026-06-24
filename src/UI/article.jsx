@@ -232,8 +232,8 @@ export default function Article() {
         try {
             const userStr = localStorage.getItem("user");
             if (!userStr) {
-                enqueueSnackbar("Please sign in to listen to articles.", { variant: "info" });
-                navigate("/login");
+                enqueueSnackbar("Please buy more credits  to listen to articles.", { variant: "info" });
+                navigate("/checkout");
                 return;
             }
             
