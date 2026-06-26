@@ -104,7 +104,9 @@ export const verifyOtp = async (req, res) => {
         // OTP is valid, generate tokens
         const accessToken = generateToken(user._id);
         const refreshToken = generateRefreshToken(user._id);
-        user.refreshToken.push(refreshToken);
+        let tokens = Array.isArray(user.refreshToken) ? [...user.refreshToken] : (typeof user.refreshToken === 'string' ? [user.refreshToken] : []);
+        tokens.push(refreshToken);
+        user.refreshToken = tokens;
         await user.save();
         
         sendRefreshToken(res, refreshToken);
@@ -147,7 +149,9 @@ export const register = async (req, res) => {
         const accessToken = generateToken(newUser);
         const refreshToken = generateRefreshToken(newUser);
         
-        newUser.refreshToken.push(refreshToken);
+        let tokens = Array.isArray(newUser.refreshToken) ? [...newUser.refreshToken] : (typeof newUser.refreshToken === 'string' ? [newUser.refreshToken] : []);
+        tokens.push(refreshToken);
+        newUser.refreshToken = tokens;
         await newUser.save();
 
         sendRefreshToken(res, refreshToken);
@@ -175,7 +179,9 @@ export const refresh = async (req, res) => {
         const decoded = jwt.verify(token, REFRESH_SECRET);
         const user = await User.findById(decoded.id );
 
-        if (!user || !user.refreshToken.includes(token)) {
+        let tokens = user ? (Array.isArray(user.refreshToken) ? [...user.refreshToken] : (typeof user.refreshToken === 'string' ? [user.refreshToken] : [])) : [];
+
+        if (!user || !tokens.includes(token)) {
             return res.status(403).json({ message: "Invalid refresh token" });
         }
 
@@ -183,8 +189,9 @@ export const refresh = async (req, res) => {
         const newRefreshToken = generateRefreshToken(user._id);
         
         // Remove the old token and add the new one
-        user.refreshToken = user.refreshToken.filter(rt => rt !== token);
-        user.refreshToken.push(newRefreshToken);
+        tokens = tokens.filter(rt => rt !== token);
+        tokens.push(newRefreshToken);
+        user.refreshToken = tokens;
         await user.save();
         
         sendRefreshToken(res, newRefreshToken);
@@ -200,7 +207,8 @@ export const logout = async (req, res) => {
         const user = await User.findOne({ refreshToken: token });
         if (user) {
             // Remove only this specific device's token
-            user.refreshToken = user.refreshToken.filter(rt => rt !== token);
+            let tokens = Array.isArray(user.refreshToken) ? [...user.refreshToken] : (typeof user.refreshToken === 'string' ? [user.refreshToken] : []);
+            user.refreshToken = tokens.filter(rt => rt !== token);
             await user.save();
         }
     }
